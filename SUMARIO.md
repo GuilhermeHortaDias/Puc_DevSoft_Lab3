@@ -1,33 +1,32 @@
-# Sumário da documentação
+# Sumário
 
-[Voltar ao README](README.md)
+[Contexto e integrantes](README.md)
 
-## 1. Contexto e planejamento
+## Entregáveis do projeto — Lab03S01
 
-- [Visão geral, integrantes e entrega atual](README.md)
-- [Análise integral do enunciado, requisitos e decisões](docs/analise-enunciado.md)
-- [Plano em etapas e critérios de conferência](docs/plano-de-trabalho.md)
+Este é o material para revisar com o grupo, entregar na disciplina e usar como base para o desenvolvimento.
 
-## 2. Pesquisa
+| Entregável | O que contém | Abrir |
+| --- | --- | --- |
+| Casos de uso | Diagrama, atores, objetivos e fluxos | [Casos de uso](docs/modelagem/casos-de-uso.md) |
+| Histórias do usuário | Necessidades dos perfis e critérios de aceitação | [Histórias](docs/modelagem/historias-do-usuario.md) |
+| Classes | Diagrama de domínio, relações e restrições | [Classes](docs/modelagem/classes.md) |
+| Componentes | Diagrama da arquitetura MVC e responsabilidades | [Componentes](docs/modelagem/componentes.md) |
 
-- [ClassDojo, PBIS Rewards e LiveSchool: comparação e limites](docs/pesquisa/sistemas-semelhantes.md)
-- [Notação, formas, relações e escolha da ferramenta](docs/pesquisa/diagramas-e-ferramentas.md)
+[Requisitos e decisões](docs/modelagem/requisitos.md): referência única para conferir o que veio do enunciado, quais escolhas foram propostas e quais definições ainda precisam ser confirmadas.
 
-## 3. Modelagem do sistema: Lab03S01
+Cada documento de diagrama contém sua imagem e os links para a fonte `.puml` e as exportações SVG/PNG.
 
-| Modelo | Documento de leitura | Fonte editável | Visualização |
-| --- | --- | --- | --- |
-| Casos de uso | [Atores, objetivos e fluxos](docs/modelagem/casos-de-uso.md) | [.puml](docs/diagramas/casos-de-uso.puml) | [SVG](docs/diagramas/casos-de-uso.svg) / [PNG](docs/diagramas/casos-de-uso.png) |
-| Histórias do usuário | [Histórias, critérios e dependências](docs/modelagem/historias-do-usuario.md) | [.md](docs/modelagem/historias-do-usuario.md) | Documento textual |
-| Classes | [Responsabilidades, multiplicidades e invariantes](docs/modelagem/classes.md) | [.puml](docs/diagramas/classes.puml) | [SVG](docs/diagramas/classes.svg) / [PNG](docs/diagramas/classes.png) |
-| Componentes | [MVC, interfaces e fluxos](docs/modelagem/componentes.md) | [.puml](docs/diagramas/componentes.puml) | [SVG](docs/diagramas/componentes.svg) / [PNG](docs/diagramas/componentes.png) |
+## Insumos de elaboração — consulta opcional
 
-- [Matriz de rastreabilidade e revisão de consistência](docs/modelagem/rastreabilidade.md)
+[Referências utilizadas](docs/insumos/README.md): resumo do enunciado como fonte, aplicações semelhantes e documentação técnica consultada. Esse material explica a origem da modelagem; não faz parte dos quatro entregáveis nem acrescenta funcionalidades.
 
-## 4. Reprodução e verificação
+## Atualizar os diagramas
 
-- [Como editar, renderizar e conferir os diagramas](docs/diagramas/README.md)
-- [Script PowerShell de renderização](scripts/renderizar-diagramas.ps1)
-- [Verificador de links, fontes e exportações](scripts/verificar-documentacao.py)
+Edite o `.puml` correspondente e, com Java no PATH, execute na raiz do repositório:
 
-Ordem sugerida de leitura: **README → análise do enunciado → casos de uso → histórias → classes → componentes → rastreabilidade**. As pesquisas explicam as escolhas e o plano registra os pontos de controle.
+```powershell
+./scripts/renderizar-diagramas.ps1
+```
+
+O [script de renderização](scripts/renderizar-diagramas.ps1) usa PlantUML 1.2026.8, verifica sua distribuição e gera novamente as imagens SVG/PNG.

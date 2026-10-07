@@ -24,7 +24,7 @@ if ($lab3ActualHash -ne $lab3ExpectedHash) {
 }
 
 $lab3Java = (Get-Command java -ErrorAction Stop).Source
-$lab3Dir = Join-Path $lab3Root 'docs/diagramas'
+$lab3Dir = Join-Path $lab3Root 'docs/modelagem/diagramas'
 $lab3Sources = @(Get-ChildItem -LiteralPath $lab3Dir -Filter '*.puml' | Sort-Object Name)
 if ($lab3Sources.Count -ne 3) {
     throw 'Esperados os tres diagramas PlantUML da entrega.'
@@ -39,26 +39,4 @@ foreach ($lab3Format in @('-tsvg', '-tpng')) {
     if ($LASTEXITCODE -ne 0) { throw "Falha na renderizacao $lab3Format." }
 }
 
-$lab3Entries = @()
-foreach ($lab3Source in $lab3Sources) {
-    $lab3Assets = @()
-    foreach ($lab3Extension in @('.puml', '.svg', '.png')) {
-        $lab3Asset = Join-Path $lab3Dir ($lab3Source.BaseName + $lab3Extension)
-        if (-not (Test-Path -LiteralPath $lab3Asset)) { throw "Exportacao ausente: $lab3Asset" }
-        $lab3Assets += [ordered]@{
-            path = 'docs/diagramas/' + $lab3Source.BaseName + $lab3Extension
-            sha256 = (Get-FileHash -LiteralPath $lab3Asset -Algorithm SHA256).Hash.ToLowerInvariant()
-        }
-    }
-    $lab3Entries += [ordered]@{ name = $lab3Source.BaseName; assets = $lab3Assets }
-}
-
-$lab3Manifest = [ordered]@{
-    renderer = "PlantUML $lab3Version (Java 8 distribution)"
-    jarSha256 = $lab3ActualHash
-    diagrams = $lab3Entries
-}
-$lab3Json = $lab3Manifest | ConvertTo-Json -Depth 8
-$lab3Utf8 = New-Object System.Text.UTF8Encoding($false)
-[System.IO.File]::WriteAllText((Join-Path $lab3Dir 'manifesto.json'), $lab3Json + "`n", $lab3Utf8)
-Write-Output 'Sintaxe validada. Tres diagramas exportados em SVG e PNG; manifesto atualizado.'
+Write-Output 'Tres diagramas exportados em SVG e PNG.'

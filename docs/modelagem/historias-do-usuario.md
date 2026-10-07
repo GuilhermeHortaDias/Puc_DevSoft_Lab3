@@ -1,14 +1,14 @@
 # Histórias do usuário e critérios de aceitação
 
-[Sumário](../../SUMARIO.md) · [Casos de uso](casos-de-uso.md) · [Rastreabilidade](rastreabilidade.md)
+[Sumário](../../SUMARIO.md) · [Casos de uso](casos-de-uso.md) · [Requisitos e decisões](requisitos.md)
 
-As histórias descrevem o produto modelado, **não funcionalidades implementadas**. Prioridade “essencial” refere-se ao requisito do sistema, não ao compromisso de implementar tudo na sprint de modelagem. D01–D11 são decisões propostas na [análise](../analise-enunciado.md).
+As histórias especificam o que o sistema deve oferecer e os critérios para aceitar cada comportamento. Os identificadores RF e D remetem a [requisitos e decisões](requisitos.md); UC remete aos [casos de uso](casos-de-uso.md).
 
 ## HU01 — Ingressar como aluno
 
 **Como aluno, quero me cadastrar na instituição participante, para receber reconhecimentos e trocar moedas por vantagens.**
 
-**Essencial. Requisitos:** RF01, RF02, RF16. **Caso:** UC01. **Dependência:** lista de instituições pré-cadastrada.
+**Requisitos:** RF01, RF02, RF16. **Caso:** UC01. **Dependência:** lista de instituições pré-cadastrada.
 
 - Dado formulário completo, quando informar nome, email, CPF, RG, endereço, curso, instituição existente, login e senha, então criar aluno, vínculo e conta com saldo zero.
 - Dado um campo obrigatório ausente, quando enviar o formulário, então informar a pendência e não criar cadastro parcial.
@@ -19,7 +19,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como representante de empresa, quero cadastrar a parceria, para oferecer vantagens aos alunos.**
 
-**Essencial. Requisitos:** RF10, RF16. **Caso:** UC02. **Decisões:** D03, D08.
+**Requisitos:** RF10, RF16. **Caso:** UC02. **Decisões:** D03, D08.
 
 - Dado nome, email, login e senha válidos, quando confirmar cadastro, então criar empresa com credenciais próprias.
 - Dado ausência de email/nome ou login já utilizado, quando tentar cadastrar, então não criar empresa e informar correção necessária.
@@ -29,7 +29,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como aluno, professor ou representante de empresa, quero autenticar meu acesso, para utilizar as funções correspondentes ao meu perfil.**
 
-**Essencial. Requisito:** RF16. **Caso:** UC03. **Dependência:** cadastro do perfil.
+**Requisito:** RF16. **Caso:** UC03. **Dependência:** cadastro do perfil.
 
 - Dado qualquer um dos três perfis com credenciais válidas, quando efetuar login, então estabelecer sessão e disponibilizar suas funções.
 - Dado login inexistente ou senha incorreta, quando autenticar, então negar sessão sem expor credenciais.
@@ -40,7 +40,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como aluno, quero consultar o catálogo de vantagens, para decidir como usar minhas moedas.**
 
-**Essencial. Requisito:** RF09. **Caso:** UC04. **Dependências:** HU03; existência de vantagens para catálogo não vazio.
+**Requisito:** RF09. **Caso:** UC04. **Dependências:** HU03; existência de vantagens para catálogo não vazio.
 
 - Dado aluno autenticado e vantagens cadastradas, quando abrir o catálogo, então mostrar descrição, foto, custo e empresa responsável.
 - Dado catálogo vazio, quando consultá-lo, então informar ausência de vantagens sem criar saldo ou resgate.
@@ -50,7 +50,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como representante de empresa, quero cadastrar uma vantagem com descrição, foto e custo em moedas, para atrair alunos reconhecidos pelo sistema.**
 
-**Essencial. Requisito:** RF11. **Caso:** UC05. **Dependências:** HU02, HU03.
+**Requisito:** RF11. **Caso:** UC05. **Dependências:** HU02, HU03.
 
 - Dado empresa autenticada e campos completos, quando cadastrar custo inteiro positivo, descrição e foto, então publicar vantagem vinculada à empresa da sessão.
 - Dado custo zero, negativo ou fracionário (D02), descrição em branco ou foto ausente, quando cadastrar, então rejeitar a publicação.
@@ -60,7 +60,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como professor, quero receber 1.000 moedas por semestre sem perder as que restaram, para continuar reconhecendo meus alunos.**
 
-**Essencial. Requisito:** RF04. **Caso:** UC09. **Dependência:** professor pré-cadastrado. **Decisão:** D04.
+**Requisito:** RF04. **Caso:** UC09. **Dependência:** professor pré-cadastrado. **Decisão:** D04.
 
 - Dado professor com saldo 250 e novo semestre elegível, quando executar o crédito, então o saldo passa a 1.250 e um crédito de 1.000 é registrado.
 - Dado professor com saldo zero, quando receber o crédito do semestre, então seu saldo passa a 1.000.
@@ -71,7 +71,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como professor, quero enviar moedas a um aluno com uma justificativa, para reconhecer sua contribuição.**
 
-**Essencial. Requisito:** RF05. **Caso:** UC06. **Dependências:** HU03 e saldo disponível; aluno cadastrado. **Decisões:** D02, D05, D09.
+**Requisito:** RF05. **Caso:** UC06. **Dependências:** HU03 e saldo disponível; aluno cadastrado. **Decisões:** D02, D05, D09.
 
 - Dado professor com 1.000 e aluno com 20 moedas, quando enviar 100 com motivo válido, então os saldos passam a 900 e 120, e um reconhecimento relaciona as duas contas.
 - Dado professor com saldo 80, quando tentar enviar 81, então rejeitar sem alterar as contas nem notificar sucesso.
@@ -83,7 +83,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como aluno, quero receber um email ao ganhar moedas, para conhecer o reconhecimento do professor.**
 
-**Essencial. Requisito:** RF06. **Caso:** UC10, incluído em UC06. **Dependência:** HU07 confirmado.
+**Requisito:** RF06. **Caso:** UC10, incluído em UC06. **Dependência:** HU07 confirmado.
 
 - Dado reconhecimento confirmado, quando processar a notificação, então enviar ao email cadastrado do aluno a quantidade, professor e motivo propostos.
 - Dado envio recusado por regra de negócio, quando concluir a tentativa, então não enviar email de recebimento.
@@ -93,7 +93,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como professor, quero consultar meu saldo e extrato, para planejar novas premiações e revisar as realizadas.**
 
-**Essencial. Requisito:** RF07. **Caso:** UC07. **Dependência:** HU03.
+**Requisito:** RF07. **Caso:** UC07. **Dependência:** HU03.
 
 - Dado professor autenticado, quando consultar, então mostrar seu saldo e os envios, com data, quantidade, aluno e motivo.
 - Dado créditos semestrais registrados, quando apresentar o extrato, então identificá-los como entradas para explicar o saldo acumulado, conforme decisão de representação.
@@ -104,7 +104,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como aluno, quero consultar meu saldo e extrato, para entender as moedas recebidas e utilizadas.**
 
-**Essencial. Requisito:** RF08. **Caso:** UC07. **Dependência:** HU03.
+**Requisito:** RF08. **Caso:** UC07. **Dependência:** HU03.
 
 - Dado saldo inicial zero, recebimento de 100 e resgate de 40, quando consultar, então mostrar saldo 60, entrada de 100 e saída de 40.
 - Dado recebimento, quando consultar seu registro, então identificar professor, quantidade, motivo e data; dado resgate, identificar vantagem, custo histórico e código do cupom.
@@ -115,7 +115,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como aluno, quero resgatar uma vantagem pagando com minhas moedas, para usufruir do produto ou desconto oferecido.**
 
-**Essencial. Requisito:** RF12. **Caso:** UC08. **Dependências:** HU03, HU04 e saldo suficiente. **Decisões:** D02, D05, D06.
+**Requisito:** RF12. **Caso:** UC08. **Dependências:** HU03, HU04 e saldo suficiente. **Decisões:** D02, D05, D06.
 
 - Dado saldo 120 e vantagem de custo 50, quando confirmar resgate, então o saldo passa a 70 e são registrados um resgate de 50 e um cupom.
 - Dado saldo exatamente igual ao custo, quando resgatar, então permitir e deixar saldo zero.
@@ -128,7 +128,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como aluno, quero receber por email um cupom com código, para apresentá-lo na troca presencial.**
 
-**Essencial. Requisitos:** RF13, RF14. **Casos:** UC11, UC12. **Dependência:** HU11.
+**Requisitos:** RF13, RF14. **Casos:** UC11, UC12. **Dependência:** HU11.
 
 - Dado resgate confirmado, quando emitir cupom, então gerar um código único ligado a esse resgate.
 - Dado cupom emitido, quando enviar a mensagem, então o email do aluno inclui o código e a vantagem correspondente.
@@ -139,7 +139,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como representante de empresa, quero receber por email o código do cupom resgatado, para conferir o comprovante na troca presencial.**
 
-**Essencial. Requisito:** RF15. **Caso:** UC12. **Dependência:** HU11 e empresa com email cadastrado.
+**Requisito:** RF15. **Caso:** UC12. **Dependência:** HU11 e empresa com email cadastrado.
 
 - Dado resgate de vantagem da empresa, quando enviar a mensagem, então usar o email dessa empresa e o mesmo código enviado ao aluno.
 - Dado vantagem pertencente a outra empresa, quando notificar, então não encaminhar seu cupom à empresa errada.
@@ -150,7 +150,7 @@ As histórias descrevem o produto modelado, **não funcionalidades implementadas
 
 **Como professor de uma instituição participante, quero utilizar meu cadastro institucional já preparado, para acessar o sistema com meu vínculo identificado.**
 
-**Essencial. Requisito:** RF03. **Caso:** UC03, com pré-cadastro como precondição. **Dependência:** processo de parceria externo ao autosserviço.
+**Requisito:** RF03. **Caso:** UC03, com pré-cadastro como precondição. **Dependência:** processo de parceria externo ao autosserviço.
 
 - Dado professor da lista institucional, quando conferir seu registro pré-cadastrado, então nome, CPF, departamento, instituição e credenciais estão presentes.
 - Dado vínculo institucional e departamento, quando validar o registro, então o departamento pertence à mesma instituição do professor (D11).

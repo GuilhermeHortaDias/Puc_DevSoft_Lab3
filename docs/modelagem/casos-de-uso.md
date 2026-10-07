@@ -1,8 +1,10 @@
 # Diagrama e especificação de casos de uso
 
-[Sumário](../../SUMARIO.md) · [Fonte PlantUML](../diagramas/casos-de-uso.puml) · [SVG](../diagramas/casos-de-uso.svg) · [PNG](../diagramas/casos-de-uso.png)
+[Sumário](../../SUMARIO.md) · [Fonte PlantUML](diagramas/casos-de-uso.puml) · [SVG](diagramas/casos-de-uso.svg) · [PNG](diagramas/casos-de-uso.png)
 
-![Casos de uso](../diagramas/casos-de-uso.svg)
+![Casos de uso](diagramas/casos-de-uso.svg)
+
+Os casos de uso representam os objetivos dos atores. A figura e os fluxos abaixo compõem este entregável. As escolhas D01–D11 estão em [requisitos e decisões](requisitos.md).
 
 ## Atores e fronteira
 
@@ -16,7 +18,7 @@
 
 Receber um email é consequência dos fluxos de envio e resgate, não exige que seu destinatário opere uma tela. A empresa confere o cupom **presencialmente**, usando o email recebido; não foi criado um caso de uso de baixa online.
 
-Instituição não é ator de autosserviço: seu cadastro e a lista de professores são precondições. Administrador, turma, loja financeira e carteira empresarial não fazem parte desta versão.
+Instituições e professores são dados pré-cadastrados; sua preparação é precondição de uso.
 
 ## Convenções e precondições comuns
 
@@ -33,7 +35,7 @@ Instituição não é ator de autosserviço: seu cadastro e a lista de professor
 
 **Precondição:** instituições já cadastradas. **Fluxo principal:** (1) informar nome, email, CPF, RG, endereço, curso, login e senha; (2) selecionar instituição da lista existente; (3) sistema validar dados e disponibilidade do login; (4) criar aluno e conta com saldo zero; (5) confirmar cadastro.
 
-**Alternativas:** campo obrigatório ausente, instituição inexistente ou login já utilizado → rejeitar e orientar correção, sem cadastro parcial. A criação da conta é automática, sem cadastro separado pelo aluno. CPF/RG são mantidos como texto para preservar formatação; algoritmo de validação documental não está escolhido.
+**Alternativas:** campo obrigatório ausente, instituição inexistente ou login já utilizado → rejeitar e orientar correção, sem cadastro parcial.
 
 **Pós-condição:** aluno vinculado a uma instituição e habilitado a autenticar-se; cadastro não concede moedas.
 
@@ -67,7 +69,7 @@ Instituição não é ator de autosserviço: seu cadastro e a lista de professor
 
 **Fluxo principal:** (1) informar descrição, foto e custo; (2) validar custo inteiro positivo e campos; (3) associar a vantagem à empresa da sessão; (4) disponibilizar no catálogo. **Alternativas:** descrição/foto ausente ou custo inválido → não publicar; tentativa de vincular a outra empresa → negar.
 
-**Pós-condição:** vantagem pertence a exatamente uma empresa. Edição, exclusão, estoque e moderação não foram acrescentados ao caso de uso de cadastro.
+**Pós-condição:** vantagem pertence a exatamente uma empresa.
 
 ## UC06 — Enviar moedas ao aluno
 
@@ -87,7 +89,7 @@ Instituição não é ator de autosserviço: seu cadastro e a lista de professor
 
 **Alternativas:** nenhuma movimentação → saldo e histórico vazio; pedido para conta alheia ou por empresa → negar. Crédito semestral é apresentado adicionalmente no extrato do professor para explicar o saldo, conforme decisão de representação.
 
-**Pós-condição:** apenas leitura. Motivo e professor aparecem nos recebimentos; aluno e motivo nos envios; vantagem e código do cupom nos resgates. A ordenação por data é uma escolha de apresentação, não uma nova funcionalidade do domínio.
+**Pós-condição:** apenas leitura. Motivo e professor aparecem nos recebimentos; aluno e motivo nos envios; vantagem e código do cupom nos resgates.
 
 ## UC08 — Resgatar vantagem
 
@@ -121,7 +123,7 @@ Instituição não é ator de autosserviço: seu cadastro e a lista de professor
 
 **Fluxo principal:** gerar código único, associar cupom ao resgate e registrar emissão. A criação integra a transação de UC08: somente existe como cupom confirmado quando o resgate também foi confirmado. **Alternativa:** colisão de código → gerar outro; impossibilidade de criação → não confirmar o resgate.
 
-**Pós-condição:** um cupom por resgate; acesso ao código permite conferência presencial. Não se presume uso único controlado online, validade ou cancelamento.
+**Pós-condição:** um cupom por resgate; acesso ao código permite conferência presencial.
 
 ## UC12 — Enviar cupom por email ao aluno e à empresa
 
@@ -135,4 +137,4 @@ Instituição não é ator de autosserviço: seu cadastro e a lista de professor
 
 `UC06 → UC10`, `UC08 → UC11` e `UC08 → UC12` são `<<include>>`: os comportamentos são necessários no processo. Isso não significa que o envio externo do email participe da transação do banco. O sistema registra/prepara notificações e trata a entrega externa após a confirmação (D07).
 
-Não há `<<extend>>` nesta versão, pois não foi definido objetivo opcional que precise de extensão. Login é precondição, não um `include` repetido em cada operação.
+Login é precondição das operações protegidas; a sessão pode atender a várias ações.
