@@ -46,6 +46,6 @@
 - [x] Inspecionar visualmente todas as imagens.
 - [x] Verificar links internos, identificadores e cobertura dos requisitos.
 - [x] Revisar manualmente regras, multiplicidades e contratos entre componentes.
-- [ ] Conferir o conteúdo enviado e o estado do repositório.
+- [x] Conferir o conteúdo enviado e o estado do repositório.
 
 **Aceite documental:** três diagramas legíveis com fontes, histórias completas, todos os requisitos expressos rastreados, decisões adicionais identificadas, navegação íntegra e nenhuma entrega posterior implementada.
