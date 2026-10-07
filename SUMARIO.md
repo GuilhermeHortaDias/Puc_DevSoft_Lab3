@@ -17,6 +17,16 @@ Este é o material para revisar com o grupo, entregar na disciplina e usar como 
 
 Cada documento de diagrama contém sua imagem e os links para a fonte `.puml` e as exportações SVG/PNG.
 
+## Entregáveis e aplicação — Lab03S02
+
+| Entregável | O que contém | Abrir |
+| --- | --- | --- |
+| Modelo ER e persistência | Relações, esquema implementado, ORM e transações | [Modelo ER e estratégia](docs/modelagem/persistencia.md) |
+| Backend | API dos CRUDs, autenticação, JPA, migrações e testes | [Código Java](backend/src/) |
+| Frontend | Cadastro, login, consulta, edição e inativação dos dois perfis | [Código React](frontend/src/) |
+
+As tabelas futuras do ER são identificadas como planejadas. O estado implementado e os comandos para executar e verificar a aplicação estão no [README](README.md).
+
 ## Insumos de elaboração — consulta opcional
 
 [Referências utilizadas](docs/insumos/README.md): resumo do enunciado como fonte, aplicações semelhantes e documentação técnica consultada. Esse material explica a origem da modelagem; não faz parte dos quatro entregáveis nem acrescenta funcionalidades.

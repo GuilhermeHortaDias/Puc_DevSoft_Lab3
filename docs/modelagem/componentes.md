@@ -2,7 +2,7 @@
 
 [Sumário](../../SUMARIO.md) · [Fonte editável](diagramas/componentes.puml) · [SVG](diagramas/componentes.svg) · [PNG](diagramas/componentes.png)
 
-A arquitetura segue **MVC**, conforme o enunciado. Os componentes representam módulos lógicos que podem fazer parte de uma mesma aplicação. Linguagem, framework, banco e estratégia de acesso aos dados serão definidos na implementação.
+A arquitetura segue **MVC**, conforme o enunciado. Os componentes representam módulos lógicos do sistema completo. Na fase 2, a View é React; controllers e serviços usam Java/Spring Boot; a persistência usa JPA/Hibernate, Spring Data JPA e PostgreSQL, conforme a [estratégia implementada](persistencia.md).
 
 ![Diagrama de componentes](diagramas/componentes.svg)
 

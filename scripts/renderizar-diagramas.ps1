@@ -26,8 +26,8 @@ if ($lab3ActualHash -ne $lab3ExpectedHash) {
 $lab3Java = (Get-Command java -ErrorAction Stop).Source
 $lab3Dir = Join-Path $lab3Root 'docs/modelagem/diagramas'
 $lab3Sources = @(Get-ChildItem -LiteralPath $lab3Dir -Filter '*.puml' | Sort-Object Name)
-if ($lab3Sources.Count -ne 3) {
-    throw 'Esperados os tres diagramas PlantUML da entrega.'
+if ($lab3Sources.Count -eq 0) {
+    throw 'Nenhum diagrama PlantUML encontrado.'
 }
 $lab3SourcePaths = @($lab3Sources | ForEach-Object { $_.FullName })
 
@@ -39,4 +39,4 @@ foreach ($lab3Format in @('-tsvg', '-tpng')) {
     if ($LASTEXITCODE -ne 0) { throw "Falha na renderizacao $lab3Format." }
 }
 
-Write-Output 'Tres diagramas exportados em SVG e PNG.'
+Write-Output "$($lab3Sources.Count) diagramas exportados em SVG e PNG."

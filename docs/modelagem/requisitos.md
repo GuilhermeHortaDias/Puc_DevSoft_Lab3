@@ -52,4 +52,4 @@ Estas decisões fazem parte da proposta atual e podem ser revisadas pelo grupo. 
 - “Seus alunos” exige vínculo de turma/disciplina ou apenas de instituição?
 - A empresa precisa de outros dados além de nome, email e credenciais?
 
-A conferência do cupom permanece presencial, por email, conforme o enunciado. Linguagem, framework e estratégia de persistência serão definidos na etapa de implementação.
+A conferência do cupom permanece presencial, por email, conforme o enunciado. Para a fase 2, foram definidos Java 21/Spring Boot, React/TypeScript, PostgreSQL e JPA/Hibernate com Spring Data JPA. As escolhas dos CRUDs e do banco estão na [modelagem ER e estratégia de persistência](persistencia.md).
