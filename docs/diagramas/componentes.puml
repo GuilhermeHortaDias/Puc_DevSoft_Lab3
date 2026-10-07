@@ -1,0 +1,78 @@
+@startuml
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam ArrowColor #475569
+skinparam componentStyle uml2
+skinparam componentBackgroundColor #EFF6FF
+skinparam componentBorderColor #2563EB
+skinparam interfaceBackgroundColor #FFFFFF
+skinparam interfaceBorderColor #475569
+skinparam packageStyle rectangle
+skinparam packageBorderColor #94A3B8
+title Sistema de Moeda Estudantil\nComponentes lógicos e MVC | Lab03S01
+
+package "Sistema de Moeda Estudantil" {
+  package "View" {
+    component "V01\nInterface web\nAluno | Professor | Empresa" as WebViews
+  }
+  package "Controller" {
+    component "C01\nControladores de acesso\ne operações" as Controllers
+    interface "IRequisicoes" as IWeb
+    Controllers -left- IWeb
+  }
+  package "Model" {
+    component "M01\nAutenticação e autorização" as Auth
+    component "M02\nCadastros e catálogo" as Catalog
+    component "M03\nContas, reconhecimento\ne resgate" as Coins
+    component "M04\nNotificações" as Notifications
+    interface "IAcesso" as IAuth
+    interface "ICadastrosCatalogo" as ICatalog
+    interface "IMoedas" as ICoins
+    interface "INotificacoes" as INotifications
+    Auth -left- IAuth
+    Catalog -left- ICatalog
+    Coins -left- ICoins
+    Notifications -left- INotifications
+  }
+  package "Adaptadores de infraestrutura" {
+    component "P01\nPersistência" as Persistence
+    component "E01\nAdaptador de email" as EmailAdapter
+    interface "IPersistencia" as IPersistence
+    interface "IEmail" as IEmail
+    Persistence -left- IPersistence
+    EmailAdapter -left- IEmail
+  }
+}
+
+component "T01\nAgendador semestral\n<<integração proposta>>" as Scheduler #FFF7ED
+component "Serviço de email\n<<externo>>" as Provider #F0FDF4
+
+WebViews ..> IWeb : solicita ações e recebe resultado
+Controllers ..> IAuth : sessão e perfil
+Controllers ..> ICatalog : cadastro e catálogo
+Controllers ..> ICoins : envio, extrato, resgate
+Auth ..> IPersistence : credenciais
+Catalog ..> IPersistence : usuários, vínculos, vantagens
+Coins ..> IPersistence : operação atômica
+Coins ..> INotifications : solicita após confirmação
+Notifications ..> IPersistence : estado e reprocessamento
+Notifications ..> IEmail : enviar mensagem
+EmailAdapter ..> Provider : integração de envio
+Scheduler ..> ICoins : crédito único por semestre
+Scheduler ..> IAuth : identidade técnica
+
+note bottom of Coins
+  Model aplica regras de saldo,
+  justificativa, cupom e crédito.
+  Transação une moedas e histórico.
+end note
+legend bottom
+  Círculo + linha: interface fornecida. Seta tracejada: consumidor depende do contrato.
+  São módulos lógicos, sem exigir serviços separados. Tecnologia e banco não definidos.
+  Pré-cadastro institucional é precondição; não há módulo administrativo novo.
+endlegend
+@enduml

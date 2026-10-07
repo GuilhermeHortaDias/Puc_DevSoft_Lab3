@@ -1,0 +1,138 @@
+@startuml
+top to bottom direction
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam ArrowColor #475569
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor #EFF6FF
+skinparam classBorderColor #2563EB
+skinparam packageBorderColor #94A3B8
+skinparam packageStyle rectangle
+hide circle
+title Sistema de Moeda Estudantil\nClasses de domínio | Lab03S01
+
+package "Identidades e vínculo acadêmico" {
+  abstract class Usuario {
+    -id: Identificador
+    -login: Texto
+    -senhaHash: Texto
+  }
+  abstract class TitularMoedas {
+    -nome: Texto
+    -cpf: Texto
+  }
+  class Aluno {
+    -email: Texto
+    -rg: Texto
+    -endereco: Texto
+    -curso: Texto
+  }
+  class Professor
+  class EmpresaParceira {
+    -nome: Texto
+    -email: Texto
+  }
+  class InstituicaoEnsino {
+    -id: Identificador
+    -nome: Texto
+  }
+  class Departamento {
+    -id: Identificador
+    -nome: Texto
+  }
+  Usuario <|-- TitularMoedas
+  Usuario <|-- EmpresaParceira
+  TitularMoedas <|-- Aluno
+  TitularMoedas <|-- Professor
+  InstituicaoEnsino "1" -- "0..*" Aluno : vínculo
+  InstituicaoEnsino "1" -- "0..*" Professor : vínculo explícito
+  InstituicaoEnsino "1" -- "0..*" Departamento : reúne
+  Departamento "1" -- "0..*" Professor : vincula
+}
+
+package "Contas e movimentações" {
+  class Conta {
+    -id: Identificador
+    /saldo: Inteiro
+    +saldoDisponivel(): Inteiro
+    +consultarExtrato(): Lista<Movimentacao>
+    +creditar(quantidade: Inteiro)
+    +debitar(quantidade: Inteiro)
+  }
+  abstract class Movimentacao {
+    -id: Identificador
+    -dataHora: DataHora
+    -quantidade: Inteiro
+  }
+  class Reconhecimento {
+    -motivo: Texto
+  }
+  class CreditoSemestral
+  class Semestre {
+    -ano: Inteiro
+    -numero: Inteiro
+  }
+  class Resgate
+  Movimentacao <|-- Reconhecimento
+  Movimentacao <|-- CreditoSemestral
+  Movimentacao <|-- Resgate
+  TitularMoedas "1" *-- "1" Conta : possui
+  Conta "0..1" -- "0..*" Movimentacao : origem
+  Conta "0..1" -- "0..*" Movimentacao : destino
+  Semestre "1" -- "0..*" CreditoSemestral : identifica período
+}
+
+package "Vantagens, cupons e comunicação" {
+  class Vantagem {
+    -id: Identificador
+    -descricao: Texto
+    -foto: ReferenciaImagem
+    -custoMoedas: Inteiro
+  }
+  class Cupom {
+    -codigo: Texto
+    -emitidoEm: DataHora
+  }
+  class NotificacaoEmail {
+    -id: Identificador
+    -destinatario: Texto
+    -assunto: Texto
+    -conteudo: Texto
+    -estado: EstadoEmail
+    -tentativas: Inteiro
+  }
+  enum EstadoEmail {
+    PENDENTE
+    ENVIADA
+    FALHA
+  }
+  EmpresaParceira "1" -- "0..*" Vantagem : oferece
+  Vantagem "1" -- "0..*" Resgate : selecionada em
+  Resgate "1" *-- "1" Cupom : gera
+  Movimentacao "1" -- "0..*" NotificacaoEmail : referencia
+  NotificacaoEmail ..> EstadoEmail : usa
+}
+
+note bottom of CreditoSemestral
+  origem ausente; destino = conta de professor.
+  quantidade = 1.000; único por conta/semestre.
+end note
+note bottom of Reconhecimento
+  origem = professor; destino = aluno.
+  motivo não vazio; quantidade > 0.
+end note
+note bottom of Resgate
+  origem = aluno; destino ausente.
+  quantidade = custo no momento da troca.
+  Código único compartilhado nos dois emails.
+end note
+legend bottom
+  {saldo >= 0}; valores inteiros positivos (D02). Movimentações registram operações confirmadas.
+  Extrato deriva das associações origem/destino. Empresa não possui conta de moedas.
+  Professor e departamento devem pertencer à mesma instituição (D11).
+  Serviços do Model coordenam atomicidade, autorização e notificações; este não é um modelo ER.
+endlegend
+@enduml

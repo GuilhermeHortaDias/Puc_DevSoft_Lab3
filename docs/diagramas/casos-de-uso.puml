@@ -1,0 +1,70 @@
+@startuml
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 14
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam ArrowColor #475569
+skinparam usecaseBackgroundColor #EFF6FF
+skinparam usecaseBorderColor #2563EB
+skinparam actorBorderColor #334155
+skinparam rectangleBorderColor #94A3B8
+skinparam packageStyle rectangle
+title Sistema de Moeda Estudantil\nCasos de uso | Lab03S01
+
+actor Aluno as A
+actor Professor as P
+actor "Empresa parceira" as E
+actor "Agendador semestral" as T <<integração proposta>>
+actor "Serviço de email" as MAIL <<sistema externo>>
+
+rectangle "Sistema de Moeda Estudantil" {
+  usecase "UC01\nCadastrar aluno" as UC01
+  usecase "UC02\nCadastrar empresa" as UC02
+  usecase "UC03\nAutenticar acesso" as UC03
+  usecase "UC04\nConsultar vantagens" as UC04
+  usecase "UC05\nCadastrar vantagem" as UC05
+  usecase "UC06\nEnviar moedas ao aluno" as UC06
+  usecase "UC07\nConsultar saldo e extrato" as UC07
+  usecase "UC08\nResgatar vantagem" as UC08
+  usecase "UC09\nCreditar moedas do semestre" as UC09
+  usecase "UC10\nNotificar recebimento\npor email" as UC10
+  usecase "UC11\nGerar cupom com código" as UC11
+  usecase "UC12\nEnviar cupom por email\nao aluno e à empresa" as UC12
+}
+
+A -- UC01
+A -- UC03
+A -- UC04
+A -- UC07
+A -- UC08
+P -- UC03
+P -- UC06
+P -- UC07
+E -- UC02
+E -- UC03
+E -- UC05
+T -- UC09
+UC06 ..> UC10 : <<include>>
+UC08 ..> UC11 : <<include>>
+UC08 ..> UC12 : <<include>>
+MAIL -- UC10
+MAIL -- UC12
+
+note bottom of UC03
+  Cadastros e login são públicos (D01).
+  Demais ações humanas exigem sessão
+  e autorização pelo perfil.
+end note
+note bottom of UC09
+  1.000 moedas por professor/semestre.
+  Saldo anterior preservado (RN02).
+  Integração autenticada; sem tela nova (D04).
+end note
+legend bottom
+  Associações indicam participação, não ordem temporal.
+  Emails são obrigatórios no processo; envio ocorre após a confirmação das moedas.
+  Instituições e professores: pré-cadastro como precondição, fora do autosserviço.
+endlegend
+@enduml
