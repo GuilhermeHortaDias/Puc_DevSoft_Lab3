@@ -6,7 +6,7 @@
 
 ## Enunciado do laboratório
 
-Fonte principal: `LABORATORIO_3_LAB_DESENVOLVIMENTO_DE_SOFTWARE.pdf`, fornecido pelo grupo. Suas duas páginas foram analisadas.
+Fonte principal: [LABORATORIO_3_LAB_DESENVOLVIMENTO_DE_SOFTWARE.pdf](../LABORATORIO_3_LAB_DESENVOLVIMENTO_DE_SOFTWARE.pdf), fornecido pelo grupo. Suas duas páginas foram analisadas.
 
 A seção **Lab03S01** solicita casos de uso, histórias do usuário, classes e componentes. As exigências relevantes foram consolidadas em [requisitos e decisões](../modelagem/requisitos.md). O PDF original permanece no arquivo fornecido pelo grupo.
 

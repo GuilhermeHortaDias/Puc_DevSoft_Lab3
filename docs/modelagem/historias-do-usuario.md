@@ -130,7 +130,7 @@ As histórias especificam o que o sistema deve oferecer e os critérios para ace
 
 **Requisitos:** RF13, RF14. **Casos:** UC11, UC12. **Dependência:** HU11.
 
-- Dado resgate confirmado, quando emitir cupom, então gerar um código único ligado a esse resgate.
+- Dado resgate válido, quando confirmar a troca, então criar na mesma operação o débito, o resgate e um cupom com código único ligado a esse resgate.
 - Dado cupom emitido, quando enviar a mensagem, então o email do aluno inclui o código e a vantagem correspondente.
 - Dado dois resgates distintos, quando emitir seus cupons, então os códigos são diferentes.
 - Dado falha de email após resgate, quando reenviar, então utilizar o cupom original sem novo débito ou nova emissão.

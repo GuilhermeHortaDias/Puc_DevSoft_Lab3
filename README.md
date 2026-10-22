@@ -14,12 +14,13 @@ O sistema reconhece o mérito estudantil com moedas virtuais. Professores distri
 
 A entrega atual é a **modelagem da Lab03S01**: casos de uso, histórias do usuário, classes e componentes. Ela orienta a implementação do sistema; a aplicação ainda não foi desenvolvida.
 
-**[Abrir os quatro entregáveis no SUMÁRIO](SUMARIO.md).**
+**[PDF completo para entrega da sprint 1](docs/entrega-sprint-1/Lab03S01-Sistema-de-Moeda-Estudantil.pdf)** · **[Roteiro de apresentação](docs/entrega-sprint-1/ROTEIRO_APRESENTACAO.md)** · **[Abrir os quatro entregáveis no SUMÁRIO](SUMARIO.md)**
 
 ## Organização
 
 | Local | Conteúdo | Uso |
 | --- | --- | --- |
+| [docs/entrega-sprint-1/](docs/entrega-sprint-1/README.md) | Relatório consolidado em PDF/HTML e roteiro de apresentação | Entrega da Lab03S01 e apresentação em aula |
 | [docs/modelagem/](docs/modelagem/) | Quatro entregáveis, requisitos e decisões | Material do projeto para revisão, entrega e desenvolvimento |
 | [docs/modelagem/diagramas/](docs/modelagem/diagramas/) | Fontes PlantUML e imagens dos três diagramas | Editar ou visualizar os modelos |
 | [docs/insumos/](docs/insumos/README.md) | Resumo das referências usadas na elaboração | Consulta opcional sobre a origem das escolhas |
