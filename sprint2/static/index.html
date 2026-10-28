@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#142b50">
+  <title>Cadastros | Sistema de Moeda Estudantil</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Sistema de Moeda Estudantil, início">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <span>Sistema de Moeda Estudantil</span>
+    </a>
+    <span class="sprint-label">Entrega inicial · Sprint 2</span>
+  </header>
+
+  <main class="layout">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Cadastros do sistema</p>
+        <h1 id="page-title">Alunos e empresas parceiras</h1>
+        <p class="intro-copy">Gerencie os dados iniciais usados pelo sistema de reconhecimento estudantil.</p>
+      </div>
+      <div id="connection-status" class="connection" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>Conectando ao servidor…</span>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Tipo de cadastro">
+      <button class="tab is-active" type="button" data-resource="alunos" aria-selected="true">Alunos</button>
+      <button class="tab" type="button" data-resource="empresas-parceiras" aria-selected="false">Empresas parceiras</button>
+    </nav>
+
+    <section class="workspace" aria-label="Gerenciamento de cadastros">
+      <section class="form-card" aria-labelledby="form-title">
+        <div class="card-heading">
+          <div>
+            <p class="eyebrow" id="form-kicker">Novo cadastro</p>
+            <h2 id="form-title">Cadastrar aluno</h2>
+          </div>
+          <span class="step-badge" aria-hidden="true">01</span>
+        </div>
+        <p class="form-help">Preencha os dados para incluir o cadastro no sistema.</p>
+        <form id="record-form" novalidate>
+          <div id="form-fields" class="form-fields"></div>
+          <p id="form-message" class="message" role="status" aria-live="polite"></p>
+          <div class="form-actions">
+            <button id="cancel-edit" class="button button-quiet" type="button" hidden>Cancelar</button>
+            <button id="submit-form" class="button button-primary" type="submit">Salvar aluno</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="list-card" aria-labelledby="list-title">
+        <div class="card-heading list-heading">
+          <div>
+            <p class="eyebrow">Registros salvos</p>
+            <h2 id="list-title">Alunos cadastrados</h2>
+          </div>
+          <span id="record-count" class="count-pill">0 registros</span>
+        </div>
+        <div id="list-message" class="list-message" role="status" aria-live="polite">Carregando registros…</div>
+        <div class="table-wrap">
+          <table>
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <footer class="page-footer">
+      <span>Persistência local SQLite</span>
+      <span>Interface web conectada à API do projeto</span>
+    </footer>
+  </main>
+</body>
+</html>

@@ -2,7 +2,13 @@
 
 [Contexto e integrantes](README.md)
 
-## Entregáveis do projeto — Lab03S01
+## Entrega atual — Lab03S02 / Sprint 2
+
+**[Entrega, escopo e instruções para executar](docs/entrega-sprint-2/README.md)** · [Modelo ER](docs/entrega-sprint-2/MODELO_ER.md) · [Roteiro de apresentação](docs/entrega-sprint-2/ROTEIRO_APRESENTACAO.md)
+
+O código executável está em [sprint2/](sprint2/). A aplicação inclui CRUD inicial de aluno e empresa parceira, interface web, API JSON, SQLAlchemy ORM e DAOs sobre SQLite.
+
+## Entregáveis de modelagem — Lab03S01 / Sprint 1
 
 Este é o material para revisar com o grupo, entregar na disciplina e usar como base para o desenvolvimento.
 
