@@ -6,6 +6,8 @@
 
 Este é o material para revisar com o grupo, entregar na disciplina e usar como base para o desenvolvimento.
 
+**[Relatório completo da sprint 1 em PDF](docs/entrega-sprint-1/Lab03S01-Sistema-de-Moeda-Estudantil.pdf)** · [Entrega e geração do relatório](docs/entrega-sprint-1/README.md) · [Roteiro de apresentação](docs/entrega-sprint-1/ROTEIRO_APRESENTACAO.md)
+
 | Entregável | O que contém | Abrir |
 | --- | --- | --- |
 | Casos de uso | Diagrama, atores, objetivos e fluxos | [Casos de uso](docs/modelagem/casos-de-uso.md) |
