@@ -36,20 +36,23 @@ Estas decisões fazem parte da proposta atual e podem ser revisadas pelo grupo. 
 | D01 | Cadastro inicial e login são públicos; demais ações humanas exigem sessão e perfil autorizado. |
 | D02 | Quantidade/custo são inteiros positivos; aluno inicia com zero moedas; envio e resgate não podem deixar saldo negativo. |
 | D03 | Empresa possui nome e email como dados mínimos; login é único e senha é armazenada como hash. |
-| D04 | Agendador autenticado dispara o crédito semestral; cada professor recebe no máximo um crédito por semestre. |
-| D05 | Envio confirma débito, crédito e registro juntos; resgate confirma débito, registro e cupom juntos. |
-| D06 | Código de cupom é único; o resgate conserva o valor debitado, mesmo se o custo da vantagem mudar depois. |
-| D07 | Emails são enviados após a confirmação da movimentação; repetir uma notificação não movimenta moedas novamente. |
+| D04 | Bean interno dispara crédito na inicialização e em janeiro/julho; semestre calculado em America/Sao_Paulo. Professor ingressante recebe o semestre corrente; cada conta recebe no máximo um crédito por ano/semestre. Não há endpoint público ou administrador. |
+| D05 | Envio confirma débito, crédito, movimentação e notificação juntos; resgate confirma débito, movimentação com cupom e duas notificações juntos. Contas usam bloqueio pessimista em ordem de UUID; comando é único por solicitante/requisicaoId. |
+| D06 | Código de cupom é único e fica na movimentação de resgate, junto ao custo debitado e à descrição histórica. Não há entidade separada de cupom. |
+| D07 | Intenção de email é persistida na mesma transação da movimentação. Worker usa JavaMailSender após commit e repete apenas o envio, preservando moedas e cupom; Mailpit local e SMTP externo por ambiente. |
 | D08 | Empresa pode concluir cadastro sem vantagem inicial e cadastrar suas ofertas após autenticar-se. |
 | D09 | Nesta versão, o vínculo aluno–professor é aproximado pela mesma instituição. O significado de “seus alunos” precisa ser confirmado. |
 | D10 | Aluno e professor possuem uma conta cada; o resgate não cria crédito de moedas para a empresa. |
-| D11 | Departamento e professor pertencem à mesma instituição. |
+| D11 | Departamento e professor pertencem à mesma instituição, com vínculo explícito e FK composta. |
+| D12 | Pré-cadastro institucional usa JSON externo configurado em INSTITUCIONAL_ARQUIVO, com instituições, departamentos, professores e credenciais; template local contém dados fictícios e preserva a base PUC Minas existente. |
+| D13 | Usuario concreto se associa aos perfis por PK compartilhada (@MapsId); saldo long é armazenado na conta com versão; uma Movimentacao concreta reúne tipos e metadados, sem herança/subtipos ou entidade Semestre. |
+| D14 | Foto da vantagem é binária PNG/JPEG válido, até 2 MiB e 8 megapixels, armazenada no PostgreSQL com seu tipo. |
+| D15 | Cada usuário mantém seu cadastro; excluir inativa e conserva histórico. BCrypt, sessão e CSRF protegem acesso; APIs usam DTOs e validação. |
 
-## Definições a confirmar antes da implementação
+## Definições sujeitas à confirmação do grupo
 
-- Como serão preparados os cadastros de instituições, departamentos e professores, incluindo suas credenciais?
-- Quais datas disparam o crédito semestral e como tratar professor que ingressa no meio do semestre?
-- “Seus alunos” exige vínculo de turma/disciplina ou apenas de instituição?
-- A empresa precisa de outros dados além de nome, email e credenciais?
+- “Seus alunos” exige vínculo de turma/disciplina ou apenas de instituição? A implementação adota D09 enquanto essa expressão não for esclarecida.
+- A empresa precisa de outros dados além de nome, email e credenciais? A implementação conserva o cadastro mínimo existente.
+- O grupo precisa fornecer o arquivo institucional de operação e confirmar as datas de janeiro/julho adotadas em D04. O mecanismo e o tratamento do ingresso tardio já estão definidos como decisões, sem atribuí-los ao PDF.
 
-A conferência do cupom permanece presencial, por email, conforme o enunciado. Para a fase 2, foram definidos Java 21/Spring Boot, React/TypeScript, PostgreSQL e JPA/Hibernate com Spring Data JPA. As escolhas dos CRUDs e do banco estão na [modelagem ER e estratégia de persistência](persistencia.md).
+A conferência do cupom permanece presencial, por email, conforme o enunciado. A aplicação usa Java 21/Spring Boot, React/TypeScript, PostgreSQL e JPA/Hibernate com Spring Data JPA. As escolhas de esquema, transações e segurança estão na [modelagem ER e estratégia de persistência](persistencia.md). O PDF/HTML da sprint 1 preserva a entrega histórica; estes documentos acompanham a implementação atual.

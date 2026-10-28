@@ -1,14 +1,12 @@
 @startuml
-title Modelo ER — Sistema de Moeda Estudantil
+title Modelo ER — Sistema de Moeda Estudantil\nEsquema de implementação
 hide circle
 skinparam linetype ortho
 skinparam shadowing false
-skinparam class {
-  BackgroundColor #FFFFFF
-  BackgroundColor<<planejada>> #F2F3F5
-  BorderColor #194E45
-  BorderColor<<planejada>> #868B94
-}
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 13
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #194E45
 
 entity "instituicao" as instituicao {
   * id : bigint <<PK>>
@@ -41,6 +39,20 @@ entity "empresa_parceira" as empresa {
   * nome : varchar(150)
   * email : varchar(254)
 }
+entity "departamento" as departamento {
+  * id : uuid <<PK>>
+  --
+  * nome : varchar(150)
+  * instituicao_id : bigint <<FK>>
+}
+entity "professor" as professor {
+  * id : uuid <<PK, FK usuario>>
+  --
+  * nome : varchar(150)
+  * cpf : varchar(11) <<UQ>>
+  * instituicao_id : bigint <<FK>>
+  * departamento_id : uuid <<FK>>
+}
 entity "conta" as conta {
   * id : uuid <<PK>>
   --
@@ -48,121 +60,86 @@ entity "conta" as conta {
   * saldo : bigint
   * versao : bigint
 }
-entity "departamento" as departamento <<planejada>> {
+entity "vantagem" as vantagem {
   * id : uuid <<PK>>
   --
-  * nome : varchar
-  * instituicao_id : bigint <<FK>>
+  * empresa_id : uuid <<FK empresa_parceira>>
+  * descricao : varchar(2000)
+  * custo : bigint
+  * foto : bytea
+  * tipo_foto : varchar(40)
 }
-entity "professor" as professor <<planejada>> {
-  * id : uuid <<PK, FK usuario>>
-  --
-  * nome : varchar
-  * cpf : varchar <<UQ>>
-  * instituicao_id : bigint <<FK>>
-  * departamento_id : uuid <<FK>>
-}
-entity "semestre" as semestre <<planejada>> {
+entity "movimentacao" as movimentacao {
   * id : uuid <<PK>>
   --
-  * ano : integer
-  * numero : integer
-  UNIQUE (ano, numero)
-}
-entity "movimentacao" as movimentacao <<planejada>> {
-  * id : uuid <<PK>>
-  --
-  * tipo : varchar
+  * tipo : varchar(30)
   * quantidade : bigint
-  * ocorrida_em : timestamptz
+  * data_hora : timestamptz
   origem_id : uuid <<FK conta>>
   destino_id : uuid <<FK conta>>
+  motivo : varchar(2000)
+  vantagem_id : uuid <<FK vantagem>>
+  descricao_vantagem : varchar(2000)
+  cupom_codigo : varchar(40) <<UQ>>
+  ano : integer
+  semestre : integer
+  * solicitante_id : uuid <<FK usuario>>
+  * requisicao_id : uuid
 }
-entity "reconhecimento" as reconhecimento <<planejada>> {
-  * id : uuid <<PK, FK movimentacao>>
-  --
-  * motivo : text
-}
-entity "credito_semestral" as credito <<planejada>> {
-  * id : uuid <<PK, FK movimentacao>>
-  --
-  * professor_id : uuid <<FK>>
-  * semestre_id : uuid <<FK>>
-  UNIQUE (professor_id, semestre_id)
-}
-entity "vantagem" as vantagem <<planejada>> {
-  * id : uuid <<PK>>
-  --
-  * empresa_id : uuid <<FK>>
-  * descricao : text
-  * foto_url : varchar
-  * custo : bigint
-  * ativa : boolean
-}
-entity "resgate" as resgate <<planejada>> {
-  * id : uuid <<PK, FK movimentacao>>
-  --
-  * vantagem_id : uuid <<FK>>
-  * custo_debitado : bigint
-}
-entity "cupom" as cupom <<planejada>> {
-  * id : uuid <<PK>>
-  --
-  * resgate_id : uuid <<FK, UQ>>
-  * codigo : varchar <<UQ>>
-  * gerado_em : timestamptz
-}
-entity "notificacao" as notificacao <<planejada>> {
+entity "notificacao" as notificacao {
   * id : uuid <<PK>>
   --
   * movimentacao_id : uuid <<FK>>
-  * destinatario : varchar
-  * assunto : varchar
+  * destinatario : varchar(254)
+  * assunto : varchar(200)
   * conteudo : text
-  * estado : varchar
+  * estado : varchar(15)
   * tentativas : integer
+  * proxima_tentativa : timestamptz
+  ultimo_erro : varchar(300)
 }
 
 instituicao ||--o{ aluno
 usuario ||--o| aluno
 usuario ||--o| empresa
+usuario ||--o| professor
 usuario ||--o| conta
 instituicao ||--o{ departamento
 instituicao ||--o{ professor
 departamento ||--o{ professor
-usuario ||--o| professor
 conta |o--o{ movimentacao : origem
 conta |o--o{ movimentacao : destino
-movimentacao ||--o| reconhecimento
-movimentacao ||--o| credito
-movimentacao ||--o| resgate
-professor ||--o{ credito
-semestre ||--o{ credito
+usuario ||--o{ movimentacao : solicitante
 empresa ||--o{ vantagem
-vantagem ||--o{ resgate
-resgate ||--|| cupom
+vantagem |o--o{ movimentacao : resgate
 movimentacao ||--o{ notificacao
 
 note bottom of usuario
-  Um único perfil por usuário.
-  Aluno e professor: uma conta cada.
-  Empresa: nenhuma conta.
-  Exclusão lógica: ativo = false.
-end note
-note bottom of movimentacao
-  Subtipos exclusivos conforme tipo.
-  Reconhecimento: origem e destino obrigatórios.
-  Crédito semestral: apenas destino.
-  Resgate: apenas origem.
-  Quantidade e custo positivos; saldo não negativo.
+  PK compartilhada nos perfis (@MapsId), sem herança.
+  Aluno/professor: uma conta; empresa: nenhuma.
+  Um perfil por usuário; inativação conserva histórico.
 end note
 note bottom of professor
-  Departamento deve pertencer
-  à instituição do professor.
+  Departamento e professor devem ter a mesma instituição.
+end note
+note bottom of movimentacao
+  Crédito: destino professor + ano/semestre; quantidade = 1.000.
+  Reconhecimento: origem professor + destino aluno + motivo.
+  Resgate: origem aluno + vantagem + descrição + cupom.
+  Demais campos condicionais ausentes conforme o tipo.
+  UNIQUE (solicitante_id, requisicao_id).
+  Índice único parcial (destino_id, ano, semestre)
+  WHERE tipo = 'CREDITO_SEMESTRAL'.
+end note
+note bottom of notificacao
+  Gravada na transação da movimentação.
+  Worker SMTP lê após commit e repete somente email.
 end note
 legend bottom
-  Branco: esquema implementado nas migrações da fase 2.
-  Cinza <<planejada>>: modelo das próximas funções; sem tabelas criadas ainda.
-  * Campo obrigatório. PK: chave primária. FK: chave estrangeira. UQ: único.
+  * NOT NULL; campos sem * podem ser obrigatórios conforme tipo de movimentação.
+  PK: chave primária. FK: chave estrangeira. UQ: único.
+  Saldo >= 0; quantidade/custo > 0; semestre em {1,2}; foto PNG/JPEG.
+  Cupom está no resgate; período está no crédito. Sem tabelas de subtipos.
+  Flyway é a fonte do esquema; Hibernate valida os mapeamentos.
 endlegend
 @enduml

@@ -528,7 +528,194 @@ h1 em {
 .skip-link:focus {
   top: 10px;
 }
+.portal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 15px;
+  margin-bottom: 30px;
+}
+.portal-nav button {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 12px 17px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.portal-nav button.active {
+  color: var(--green);
+  background: #e3ecd8;
+}
+.activity-stack {
+  display: grid;
+  gap: 25px;
+}
+.activity-stack > .section-heading {
+  margin-bottom: 0;
+}
+.account-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.7fr);
+  gap: 28px;
+  align-items: start;
+}
+.account-note {
+  padding: 25px 10px;
+  color: var(--muted);
+}
+.account-note h2 {
+  color: var(--green);
+  font-size: 22px;
+}
+.account-layout .balance {
+  flex-wrap: wrap;
+  font-size: clamp(35px, 4vw, 58px);
+  overflow-wrap: anywhere;
+}
+.transaction-list {
+  padding: 0;
+  margin: 22px 0 0;
+  list-style: none;
+}
+.transaction-list li {
+  padding: 22px 0;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.transaction-list li:last-child {
+  padding-bottom: 0;
+}
+.transaction-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+}
+.transaction-heading h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.transaction-heading strong {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.amount-in {
+  color: #386b31;
+}
+.amount-out {
+  color: #995045;
+}
+.transaction-list time,
+.transaction-list p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.transaction-list p {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+.transaction-list .transaction-reason {
+  color: #345648;
+}
+.pending {
+  background: #faf3df;
+  border: 1px solid #e5d7ab;
+  color: #756029;
+}
+.notice .small-button {
+  margin-left: 12px;
+}
+.empty-state {
+  color: var(--muted);
+  padding: 20px 0;
+  font-size: 14px;
+}
+.advantages-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+}
+.advantage-card {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.advantage-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: #e9eee3;
+  font-size: 12px;
+}
+.advantage-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 23px;
+  gap: 14px;
+}
+.advantage-company {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.advantage-body h3 {
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.advantage-price {
+  font-size: 24px;
+  color: var(--green);
+  margin-top: auto;
+  overflow-wrap: anywhere;
+}
+.advantage-price span {
+  font-size: 12px;
+  font-weight: 400;
+}
+.redemption-panel {
+  border-color: #aabc91;
+}
+.redemption-panel p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.coupon-code {
+  font-family: monospace;
+  overflow-wrap: anywhere;
+  color: var(--green);
+}
+.coupon-result > .coupon-code {
+  display: inline-block;
+  padding: 14px 20px;
+  background: white;
+  border: 1px dashed #91aa7b;
+  border-radius: 8px;
+  font-size: 23px;
+  letter-spacing: 1px;
+}
+.coupon-result h2 {
+  font-size: 20px;
+}
+.coupon-result p:last-child {
+  margin-top: 15px;
+  margin-bottom: 0;
+}
 @media (max-width: 1000px) {
+  .advantages-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .home-layout {
     gap: 35px;
     grid-template-columns: 1.3fr 1fr;
@@ -551,6 +738,14 @@ h1 em {
   }
 }
 @media (max-width: 760px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+  }
+  .transaction-heading {
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 10px;
+  }
   .site-header,
   .container,
   .site-footer {
@@ -640,6 +835,9 @@ h1 em {
   }
 }
 @media (max-width: 420px) {
+  .advantages-grid {
+    grid-template-columns: 1fr;
+  }
   .form-grid,
   .details-grid {
     grid-template-columns: 1fr;

@@ -66,6 +66,7 @@ As histórias especificam o que o sistema deve oferecer e os critérios para ace
 - Dado professor com saldo zero, quando receber o crédito do semestre, então seu saldo passa a 1.000.
 - Dado crédito já registrado para professor/semestre, quando repetir o processamento, então não acrescentar outras 1.000 moedas.
 - Dado aluno ou empresa, quando executar o crédito semestral, então não conceder o crédito desse fluxo a esses perfis.
+- Dado inicialização ou janeiro/julho em America/Sao_Paulo, quando o bean interno processar o semestre corrente, então somar 1.000 uma única vez por conta/ano/semestre, incluindo professor ingressante (D04).
 
 ## HU07 — Reconhecer um aluno
 
@@ -78,6 +79,7 @@ As histórias especificam o que o sistema deve oferecer e os critérios para ace
 - Dado saldo exatamente igual à quantidade enviada, quando confirmar com dados válidos, então permitir envio e deixar o professor com saldo zero.
 - Dado motivo vazio/apenas espaços, aluno inexistente, vínculo incompatível com D09 ou quantidade não positiva, quando tentar enviar, então rejeitar sem movimentação.
 - Dado dois envios concorrentes de 80 a partir de saldo 100, quando confirmar as operações, então no máximo um é efetivado e o saldo nunca fica negativo.
+- Dado reconhecimento confirmado, quando repetir a mesma requisicaoId pelo mesmo solicitante, então retornar a operação existente sem novo débito, crédito ou notificação (D05).
 
 ## HU08 — Saber que recebi reconhecimento
 
@@ -88,6 +90,7 @@ As histórias especificam o que o sistema deve oferecer e os critérios para ace
 - Dado reconhecimento confirmado, quando processar a notificação, então enviar ao email cadastrado do aluno a quantidade, professor e motivo propostos.
 - Dado envio recusado por regra de negócio, quando concluir a tentativa, então não enviar email de recebimento.
 - Dado falha do serviço de email, quando reprocessar a mesma notificação, então manter o reconhecimento original e não creditar moedas novamente.
+- Dado falha antes do commit da movimentação ou notificação, quando encerrar a transação, então nenhuma das duas fica confirmada isoladamente (D05/D07).
 
 ## HU09 — Acompanhar meus envios como professor
 
@@ -122,7 +125,7 @@ As histórias especificam o que o sistema deve oferecer e os critérios para ace
 - Dado saldo insuficiente ou vantagem inexistente, quando tentar resgatar, então não debitar, emitir cupom ou enviar confirmação de sucesso.
 - Dado falha antes da confirmação de saldo, registro ou cupom, quando encerrar a tentativa, então nenhuma dessas partes fica confirmada isoladamente.
 - Dado dois resgates concorrentes de 80 com saldo 100, quando processar, então no máximo um é confirmado e nenhum saldo negativo ocorre.
-- Dado alteração posterior do custo do catálogo, quando consultar o resgate já realizado, então preservar o custo original debitado.
+- Dado alteração posterior do custo do catálogo, quando consultar o resgate já realizado, então preservar o custo original debitado e a descrição histórica da vantagem.
 
 ## HU12 — Receber meu cupom para troca presencial
 
@@ -152,7 +155,7 @@ As histórias especificam o que o sistema deve oferecer e os critérios para ace
 
 **Requisito:** RF03. **Caso:** UC03, com pré-cadastro como precondição. **Dependência:** processo de parceria externo ao autosserviço.
 
-- Dado professor da lista institucional, quando conferir seu registro pré-cadastrado, então nome, CPF, departamento, instituição e credenciais estão presentes.
+- Dado arquivo JSON institucional externo configurado em INSTITUCIONAL_ARQUIVO, quando preparar os registros, então nome, CPF, departamento, instituição e credenciais do professor estão presentes, sem dados pessoais reais no template de desenvolvimento (D12).
 - Dado vínculo institucional e departamento, quando validar o registro, então o departamento pertence à mesma instituição do professor (D11).
 - Dado professor pré-cadastrado com credenciais válidas, quando autenticar, então usar seu cadastro existente sem novo cadastro público.
 

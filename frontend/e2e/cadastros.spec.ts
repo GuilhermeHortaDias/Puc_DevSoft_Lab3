@@ -25,8 +25,10 @@ for (const perfil of ['aluno', 'empresa'] as const) {
       await page.getByLabel('Instituição', { exact: true }).selectOption('1')
     }
     await page.getByRole('button', { name: 'Concluir cadastro', exact: true }).click()
+    await page.getByRole('button', { name: 'Meu cadastro', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Meu cadastro', exact: true })).toBeVisible()
     await page.reload()
+    await page.getByRole('button', { name: 'Meu cadastro', exact: true }).click()
     await expect(page.getByText(`Teste ${perfil}`, { exact: true }).first()).toBeVisible()
     await page.getByRole('button', { name: 'Editar cadastro', exact: true }).click()
     await page
@@ -40,6 +42,7 @@ for (const perfil of ['aluno', 'empresa'] as const) {
     await page.getByLabel('Login', { exact: true }).fill(login)
     await page.getByLabel('Senha', { exact: true }).fill('Teste123!')
     await page.getByRole('button', { name: 'Entrar', exact: true }).click()
+    await page.getByRole('button', { name: 'Meu cadastro', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Meu cadastro', exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Inativar cadastro', exact: true }).click()
     await page.getByRole('button', { name: 'Confirmar inativação', exact: true }).click()

@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import br.pucminas.moedaestudantil.merito.ProfessorRepository;
 import static br.pucminas.moedaestudantil.cadastro.CadastrosDtos.*;
 
 @Service
@@ -20,11 +21,14 @@ public class CadastrosService {
     private final InstituicaoRepository instituicoes;
     private final ContaRepository contas;
     private final PasswordEncoder senhas;
+    private final ProfessorRepository professores;
 
     public CadastrosService(UsuarioRepository usuarios, AlunoRepository alunos, EmpresaRepository empresas,
-                           InstituicaoRepository instituicoes, ContaRepository contas, PasswordEncoder senhas) {
+                           InstituicaoRepository instituicoes, ContaRepository contas, PasswordEncoder senhas,
+                           ProfessorRepository professores) {
         this.usuarios = usuarios; this.alunos = alunos; this.empresas = empresas;
         this.instituicoes = instituicoes; this.contas = contas; this.senhas = senhas;
+        this.professores = professores;
     }
 
     @Transactional
@@ -83,6 +87,7 @@ public class CadastrosService {
         String nome = switch (usuario.getPerfil()) {
             case "ALUNO" -> alunos.findById(usuario.getId()).orElseThrow().getNome();
             case "EMPRESA" -> empresas.findById(usuario.getId()).orElseThrow().getNome();
+            case "PROFESSOR" -> professores.findById(usuario.getId()).orElseThrow().getNome();
             default -> usuario.getLogin();
         };
         return new SessaoSaida(usuario.getId(), usuario.getLogin(), usuario.getPerfil(), nome);

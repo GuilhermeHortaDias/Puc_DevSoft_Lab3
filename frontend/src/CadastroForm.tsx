@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import type { Cadastro, DadosCadastro, Instituicao, NovoCadastro, Perfil } from './api'
+import type { Cadastro, DadosCadastro, Instituicao, NovoCadastro, PerfilCadastro } from './api'
 
 interface Props {
-  perfil: Perfil
+  perfil: PerfilCadastro
   instituicoes: Instituicao[]
   inicial?: Cadastro
   busy: boolean

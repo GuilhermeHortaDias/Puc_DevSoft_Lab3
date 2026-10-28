@@ -1,0 +1,13 @@
+{
+  "instituicoes": ["PUC Minas"],
+  "professores": [
+    {
+      "nome": "Professor Demonstração",
+      "cpf": "00000000000",
+      "departamento": "Engenharia de Software",
+      "instituicao": "PUC Minas",
+      "login": "professor.demo",
+      "senha": "SENHA_PLACEHOLDER"
+    }
+  ]
+}

@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ApiError, entrar, json, recurso, request } from './api'
-import type { Cadastro, DadosCadastro, Instituicao, NovoCadastro, Perfil, Sessao } from './api'
+import { ApiError, entrar, json, mensagemErro, recurso, request } from './api'
+import type {
+  Cadastro,
+  DadosCadastro,
+  Instituicao,
+  NovoCadastro,
+  PerfilCadastro,
+  Sessao,
+} from './api'
 import CadastroForm from './CadastroForm'
+import Portal from './Portal'
 import './App.css'
 
 export default function App() {
   const [sessao, setSessao] = useState<Sessao | null>(null)
   const [cadastro, setCadastro] = useState<Cadastro | null>(null)
   const [instituicoes, setInstituicoes] = useState<Instituicao[]>([])
-  const [pagina, setPagina] = useState<Perfil | 'inicio'>('inicio')
+  const [pagina, setPagina] = useState<PerfilCadastro | 'inicio'>('inicio')
   const [editando, setEditando] = useState(false)
   const [confirmando, setConfirmando] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -25,17 +33,23 @@ export default function App() {
             if (e instanceof ApiError && e.status === 401) return null
             throw e
           }),
-          request<Instituicao[]>('/instituicoes', { signal: abort.signal }),
+          request<Instituicao[]>('/instituicoes', { signal: abort.signal }).catch((e) => {
+            if (!abort.signal.aborted) mostrarErro(e)
+            return []
+          }),
         ])
-        const perfil = usuario
-          ? await request<Cadastro>(`${recurso(usuario.perfil)}/${usuario.id}`, {
-              signal: abort.signal,
-            })
-          : null
         if (!abort.signal.aborted) {
           setSessao(usuario)
-          setCadastro(perfil)
           setInstituicoes(lista)
+        }
+        const perfil =
+          usuario && usuario.perfil !== 'PROFESSOR'
+            ? await request<Cadastro>(`${recurso(usuario.perfil)}/${usuario.id}`, {
+                signal: abort.signal,
+              })
+            : null
+        if (!abort.signal.aborted) {
+          setCadastro(perfil)
         }
       } catch (e) {
         if (!abort.signal.aborted) mostrarErro(e)
@@ -47,28 +61,36 @@ export default function App() {
     return () => abort.abort()
   }, [])
   function mostrarErro(e: unknown) {
-    if (e instanceof ApiError) {
-      const campos = Object.entries(e.campos)
-        .map(([campo, mensagem]) => `${campo.replace('dados.', '')}: ${mensagem}`)
-        .join(' · ')
-      setErro(campos ? `${e.message} ${campos}` : e.message)
-    } else {
-      setErro('Não foi possível conectar ao sistema. Confira sua conexão e tente novamente.')
-    }
+    setErro(mensagemErro(e))
   }
-  function navegar(destino: Perfil | 'inicio') {
+  function navegar(destino: PerfilCadastro | 'inicio') {
     setPagina(destino)
     setErro(null)
     setAviso(null)
   }
   async function iniciarSessao(login: string, senha: string) {
     const usuario = await entrar(login, senha)
-    const registro = await request<Cadastro>(`${recurso(usuario.perfil)}/${usuario.id}`)
     setSessao(usuario)
+    const registro =
+      usuario.perfil === 'PROFESSOR'
+        ? null
+        : await request<Cadastro>(`${recurso(usuario.perfil)}/${usuario.id}`)
     setCadastro(registro)
     setPagina('inicio')
     setEditando(false)
     setConfirmando(false)
+  }
+  async function recarregarCadastro() {
+    if (!sessao || sessao.perfil === 'PROFESSOR') return
+    setBusy(true)
+    setErro(null)
+    try {
+      setCadastro(await request<Cadastro>(`${recurso(sessao.perfil)}/${sessao.id}`))
+    } catch (e) {
+      mostrarErro(e)
+    } finally {
+      setBusy(false)
+    }
   }
   async function loginSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -90,7 +112,7 @@ export default function App() {
     setAviso(null)
     let criado = false
     try {
-      if (sessao) {
+      if (sessao && sessao.perfil !== 'PROFESSOR') {
         const registro = await request<Cadastro>(
           `${recurso(sessao.perfil)}/${sessao.id}`,
           json('PUT', dados),
@@ -122,7 +144,7 @@ export default function App() {
     setBusy(true)
     setErro(null)
     try {
-      if (inativar)
+      if (inativar && sessao.perfil !== 'PROFESSOR')
         await request<void>(`${recurso(sessao.perfil)}/${sessao.id}`, { method: 'DELETE' })
       else await request<void>('/auth/logout', { method: 'POST' })
       setSessao(null)
@@ -185,148 +207,138 @@ export default function App() {
           <p className="loading" role="status">
             Conectando ao sistema…
           </p>
-        ) : sessao && cadastro ? (
-          <>
-            <div className="page-heading">
-              <div>
-                <p className="eyebrow">SEU ESPAÇO</p>
-                <h1>Meu cadastro</h1>
-                <p>Mantenha suas informações atualizadas para participar.</p>
-              </div>
-              <span className="profile-badge">
-                {sessao.perfil === 'ALUNO' ? 'Aluno' : 'Empresa parceira'}
-              </span>
-            </div>
-            <div className="profile-layout">
-              <section className="panel profile-panel">
-                {editando ? (
-                  <>
-                    <h2>Atualizar cadastro</h2>
-                    <CadastroForm
-                      perfil={sessao.perfil}
-                      instituicoes={instituicoes}
-                      inicial={cadastro}
-                      busy={busy}
-                      onSave={salvar}
-                      onCancel={() => {
-                        setEditando(false)
-                        setErro(null)
-                      }}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <div className="section-heading">
-                      <h2>Suas informações</h2>
-                      <button
-                        className="button secondary"
-                        onClick={() => {
-                          setEditando(true)
-                          setConfirmando(false)
-                          setAviso(null)
-                        }}
-                      >
-                        Editar cadastro
-                      </button>
-                    </div>
-                    <dl className="details-grid">
-                      <div className="wide">
-                        <dt>{sessao.perfil === 'ALUNO' ? 'Nome completo' : 'Nome da empresa'}</dt>
-                        <dd>{cadastro.nome}</dd>
-                      </div>
-                      <div>
-                        <dt>Email</dt>
-                        <dd>{cadastro.email}</dd>
-                      </div>
-                      <div>
-                        <dt>Login</dt>
-                        <dd>{cadastro.login}</dd>
-                      </div>
-                      {sessao.perfil === 'ALUNO' && (
-                        <>
-                          <div>
-                            <dt>CPF</dt>
-                            <dd>{cadastro.cpf}</dd>
-                          </div>
-                          <div>
-                            <dt>RG</dt>
-                            <dd>{cadastro.rg}</dd>
-                          </div>
-                          <div className="wide">
-                            <dt>Endereço</dt>
-                            <dd>{cadastro.endereco}</dd>
-                          </div>
-                          <div>
-                            <dt>Instituição</dt>
-                            <dd>{cadastro.instituicao}</dd>
-                          </div>
-                          <div>
-                            <dt>Curso</dt>
-                            <dd>{cadastro.curso}</dd>
-                          </div>
-                        </>
-                      )}
-                    </dl>
-                  </>
-                )}
+        ) : sessao ? (
+          <Portal key={sessao.id} sessao={sessao}>
+            {!cadastro && sessao.perfil !== 'PROFESSOR' && (
+              <section className="panel">
+                <h2>Meu cadastro</h2>
+                <p>Não foi possível carregar seus dados. Tente consultar novamente.</p>
+                <button
+                  className="button secondary"
+                  disabled={busy}
+                  onClick={() => void recarregarCadastro()}
+                >
+                  {busy ? 'Carregando…' : 'Recarregar cadastro'}
+                </button>
               </section>
-              <aside className="profile-aside">
-                <section className="balance-card">
-                  <p className="eyebrow">
-                    {sessao.perfil === 'ALUNO' ? 'SUA CONTA' : 'SUA PARCERIA'}
-                  </p>
-                  {sessao.perfil === 'ALUNO' ? (
-                    <>
-                      <strong className="balance">
-                        {cadastro.saldo}
-                        <span>moedas</span>
-                      </strong>
-                      <p>Seu cadastro está ativo. Você começa com saldo zero.</p>
-                    </>
-                  ) : (
-                    <>
-                      <h2>Conexões que fazem a diferença.</h2>
-                      <p>Sua empresa agora faz parte do sistema de mérito estudantil.</p>
-                    </>
-                  )}
-                </section>
-                <section className="danger-card">
-                  <h2>Gerenciar participação</h2>
-                  <p>
-                    Ao inativar, seu acesso será encerrado. Seus dados serão conservados para o
-                    histórico.
-                  </p>
-                  {confirmando ? (
-                    <>
-                      <p className="confirmation">Deseja inativar seu cadastro?</p>
-                      <button
-                        className="button danger"
-                        disabled={busy}
-                        onClick={() => void encerrar(true)}
-                      >
-                        Confirmar inativação
-                      </button>
-                      <button
-                        className="button text-button"
-                        disabled={busy}
-                        onClick={() => setConfirmando(false)}
-                      >
-                        Cancelar
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      className="danger-link"
-                      disabled={busy}
-                      onClick={() => setConfirmando(true)}
-                    >
-                      Inativar cadastro
-                    </button>
-                  )}
-                </section>
-              </aside>
-            </div>
-          </>
+            )}
+            {cadastro && sessao.perfil !== 'PROFESSOR' && (
+              <>
+                <div className="profile-layout">
+                  <section className="panel profile-panel">
+                    {editando ? (
+                      <>
+                        <h2>Atualizar cadastro</h2>
+                        <CadastroForm
+                          perfil={sessao.perfil}
+                          instituicoes={instituicoes}
+                          inicial={cadastro}
+                          busy={busy}
+                          onSave={salvar}
+                          onCancel={() => {
+                            setEditando(false)
+                            setErro(null)
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <div className="section-heading">
+                          <h2>Suas informações</h2>
+                          <button
+                            className="button secondary"
+                            onClick={() => {
+                              setEditando(true)
+                              setConfirmando(false)
+                              setAviso(null)
+                            }}
+                          >
+                            Editar cadastro
+                          </button>
+                        </div>
+                        <dl className="details-grid">
+                          <div className="wide">
+                            <dt>
+                              {sessao.perfil === 'ALUNO' ? 'Nome completo' : 'Nome da empresa'}
+                            </dt>
+                            <dd>{cadastro.nome}</dd>
+                          </div>
+                          <div>
+                            <dt>Email</dt>
+                            <dd>{cadastro.email}</dd>
+                          </div>
+                          <div>
+                            <dt>Login</dt>
+                            <dd>{cadastro.login}</dd>
+                          </div>
+                          {sessao.perfil === 'ALUNO' && (
+                            <>
+                              <div>
+                                <dt>CPF</dt>
+                                <dd>{cadastro.cpf}</dd>
+                              </div>
+                              <div>
+                                <dt>RG</dt>
+                                <dd>{cadastro.rg}</dd>
+                              </div>
+                              <div className="wide">
+                                <dt>Endereço</dt>
+                                <dd>{cadastro.endereco}</dd>
+                              </div>
+                              <div>
+                                <dt>Instituição</dt>
+                                <dd>{cadastro.instituicao}</dd>
+                              </div>
+                              <div>
+                                <dt>Curso</dt>
+                                <dd>{cadastro.curso}</dd>
+                              </div>
+                            </>
+                          )}
+                        </dl>
+                      </>
+                    )}
+                  </section>
+                  <aside className="profile-aside">
+                    <section className="danger-card">
+                      <h2>Gerenciar participação</h2>
+                      <p>
+                        Ao inativar, seu acesso será encerrado. Seus dados serão conservados para o
+                        histórico.
+                      </p>
+                      {confirmando ? (
+                        <>
+                          <p className="confirmation">Deseja inativar seu cadastro?</p>
+                          <button
+                            className="button danger"
+                            disabled={busy}
+                            onClick={() => void encerrar(true)}
+                          >
+                            Confirmar inativação
+                          </button>
+                          <button
+                            className="button text-button"
+                            disabled={busy}
+                            onClick={() => setConfirmando(false)}
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          className="danger-link"
+                          disabled={busy}
+                          onClick={() => setConfirmando(true)}
+                        >
+                          Inativar cadastro
+                        </button>
+                      )}
+                    </section>
+                  </aside>
+                </div>
+              </>
+            )}
+          </Portal>
         ) : pagina !== 'inicio' ? (
           <>
             <button className="back-button" onClick={() => navegar('inicio')}>
@@ -437,9 +449,9 @@ export default function App() {
                   </fieldset>
                 </form>
                 <p className="login-note">
-                  Aluno ou empresa parceira?
+                  Aluno, professor ou empresa parceira?
                   <br />
-                  Use o acesso criado no seu cadastro.
+                  Use seu login e senha. Professores recebem o acesso da instituição.
                 </p>
               </section>
             </div>
@@ -466,8 +478,7 @@ export default function App() {
                 </article>
               </div>
               <p className="scope-note">
-                Nesta versão, estão disponíveis o cadastro e a manutenção de dados. As funções de
-                moedas e benefícios serão adicionadas nas próximas etapas.
+                Acesse sua conta para consultar moedas, reconhecer alunos ou descobrir vantagens.
               </p>
             </section>
           </>

@@ -4,135 +4,119 @@ skinparam backgroundColor #FFFFFF
 skinparam defaultFontName SansSerif
 skinparam defaultFontSize 13
 skinparam shadowing false
-skinparam roundcorner 8
-skinparam ArrowColor #475569
 skinparam classAttributeIconSize 0
 skinparam classBackgroundColor #EFF6FF
 skinparam classBorderColor #2563EB
-skinparam packageBorderColor #94A3B8
 skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 65
+skinparam ranksep 65
 hide circle
-title Sistema de Moeda Estudantil\nClasses de domínio | Lab03S01
+title Sistema de Moeda Estudantil\nClasses persistentes — implementação atual
 
-package "Identidades e vínculo acadêmico" {
-  abstract class Usuario {
-    -id: Identificador
-    -login: Texto
-    -senhaHash: Texto
-  }
-  abstract class TitularMoedas {
-    -nome: Texto
-    -cpf: Texto
+  class Usuario {
+    id: UUID
+    login: String
+    senhaHash: String
+    perfil: String
+    ativo: boolean
+    criadoEm: Instant
   }
   class Aluno {
-    -email: Texto
-    -rg: Texto
-    -endereco: Texto
-    -curso: Texto
+    id: UUID
+    nome: String
+    email: String
+    cpf: String
+    rg: String
+    endereco: String
+    curso: String
   }
-  class Professor
+  class Professor {
+    id: UUID
+    nome: String
+    cpf: String
+  }
   class EmpresaParceira {
-    -nome: Texto
-    -email: Texto
+    id: UUID
+    nome: String
+    email: String
   }
-  class InstituicaoEnsino {
-    -id: Identificador
-    -nome: Texto
+  class Instituicao {
+    id: Long
+    nome: String
   }
   class Departamento {
-    -id: Identificador
-    -nome: Texto
+    id: UUID
+    nome: String
   }
-  Usuario <|-- TitularMoedas
-  Usuario <|-- EmpresaParceira
-  TitularMoedas <|-- Aluno
-  TitularMoedas <|-- Professor
-  InstituicaoEnsino "1" -- "0..*" Aluno : vínculo
-  InstituicaoEnsino "1" -- "0..*" Professor : vínculo explícito
-  InstituicaoEnsino "1" -- "0..*" Departamento : reúne
-  Departamento "1" -- "0..*" Professor : vincula
-}
+  Usuario "1" -- "0..1" Aluno
+  Usuario "1" -- "0..1" Professor
+  Usuario "1" -- "0..1" EmpresaParceira
+  Instituicao "1" -- "0..*" Aluno
+  Instituicao "1" -- "0..*" Professor
+  Instituicao "1" -- "0..*" Departamento
+  Departamento "1" -- "0..*" Professor
 
-package "Contas e movimentações" {
   class Conta {
-    -id: Identificador
-    /saldo: Inteiro
-    +saldoDisponivel(): Inteiro
-    +consultarExtrato(): Lista<Movimentacao>
-    +creditar(quantidade: Inteiro)
-    +debitar(quantidade: Inteiro)
+    id: UUID
+    saldo: long
+    versao: long
   }
-  abstract class Movimentacao {
-    -id: Identificador
-    -dataHora: DataHora
-    -quantidade: Inteiro
+  class Movimentacao {
+    id: UUID
+    tipo: String
+    quantidade: long
+    dataHora: Instant
+    motivo: String [0..1]
+    descricaoVantagem: String [0..1]
+    cupomCodigo: String [0..1]
+    ano: Integer [0..1]
+    semestre: Integer [0..1]
+    requisicaoId: UUID
   }
-  class Reconhecimento {
-    -motivo: Texto
-  }
-  class CreditoSemestral
-  class Semestre {
-    -ano: Inteiro
-    -numero: Inteiro
-  }
-  class Resgate
-  Movimentacao <|-- Reconhecimento
-  Movimentacao <|-- CreditoSemestral
-  Movimentacao <|-- Resgate
-  TitularMoedas "1" *-- "1" Conta : possui
+  Usuario "1" -- "0..1" Conta : titular
+  Usuario "1" -- "0..*" Movimentacao : solicitante
   Conta "0..1" -- "0..*" Movimentacao : origem
   Conta "0..1" -- "0..*" Movimentacao : destino
-  Semestre "1" -- "0..*" CreditoSemestral : identifica período
-}
 
-package "Vantagens, cupons e comunicação" {
   class Vantagem {
-    -id: Identificador
-    -descricao: Texto
-    -foto: ReferenciaImagem
-    -custoMoedas: Inteiro
-  }
-  class Cupom {
-    -codigo: Texto
-    -emitidoEm: DataHora
+    id: UUID
+    descricao: String
+    custo: long
+    foto: byte[]
+    tipoFoto: String
   }
   class NotificacaoEmail {
-    -id: Identificador
-    -destinatario: Texto
-    -assunto: Texto
-    -conteudo: Texto
-    -estado: EstadoEmail
-    -tentativas: Inteiro
+    id: UUID
+    destinatario: String
+    assunto: String
+    conteudo: String
+    estado: String
+    tentativas: int
+    proximaTentativa: Instant
+    ultimoErro: String [0..1]
   }
-  enum EstadoEmail {
-    PENDENTE
-    ENVIADA
-    FALHA
-  }
-  EmpresaParceira "1" -- "0..*" Vantagem : oferece
-  Vantagem "1" -- "0..*" Resgate : selecionada em
-  Resgate "1" *-- "1" Cupom : gera
-  Movimentacao "1" -- "0..*" NotificacaoEmail : referencia
-  NotificacaoEmail ..> EstadoEmail : usa
-}
+  EmpresaParceira "1" -- "0..*" Vantagem
+  Vantagem "0..1" -- "0..*" Movimentacao : vantagem
+  Movimentacao "1" -- "0..*" NotificacaoEmail
 
-note bottom of CreditoSemestral
-  origem ausente; destino = conta de professor.
-  quantidade = 1.000; único por conta/semestre.
+note bottom of Usuario
+  Concreta; sem herança de perfis.
+  @MapsId nos três cadastros; um perfil por usuário.
+  Conta obrigatória para aluno/professor; empresa sem conta.
 end note
-note bottom of Reconhecimento
-  origem = professor; destino = aluno.
-  motivo não vazio; quantidade > 0.
-end note
-note bottom of Resgate
-  origem = aluno; destino ausente.
-  quantidade = custo no momento da troca.
-  Código único compartilhado nos dois emails.
+note bottom of Movimentacao
+  CREDITO_SEMESTRAL: destino professor, ano/semestre; 1.000.
+  RECONHECIMENTO: origem professor, destino aluno e motivo.
+  RESGATE: origem aluno, vantagem, descrição histórica e cupom.
+  Demais campos condicionais ausentes conforme o tipo.
+  Único (solicitante, requisicaoId).
+  Crédito único (destino, ano, semestre); cupom único.
 end note
 legend bottom
-  {saldo >= 0}; valores inteiros positivos (D02). Movimentações registram operações confirmadas.
-  Extrato deriva das associações origem/destino. Empresa não possui conta de moedas.
-  Professor e departamento devem pertencer à mesma instituição (D11).
-  Serviços do Model coordenam atomicidade, autorização e notificações; este não é um modelo ER.
+  Saldo armazenado >= 0; quantidade/custo > 0. Conta.versao usa @Version.
+  Services bloqueiam contas em ordem de UUID e confirmam conta + movimentação + notificações.
+  Professor e departamento: mesma instituição. Foto: PNG/JPEG binário.
+  Não existem classes separadas de crédito, reconhecimento, resgate, semestre ou cupom.
 endlegend
 @enduml

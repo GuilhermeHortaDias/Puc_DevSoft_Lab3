@@ -14,4 +14,14 @@ public class Conta {
     protected Conta() {}
     public Conta(Usuario titular) { id = UUID.randomUUID(); this.titular = titular; saldo = 0; }
     public long getSaldo() { return saldo; }
+    public UUID getId() { return id; }
+    public Usuario getTitular() { return titular; }
+    public void creditar(long quantidade) {
+        if (quantidade <= 0) throw new IllegalArgumentException("Quantidade deve ser positiva.");
+        saldo = Math.addExact(saldo, quantidade);
+    }
+    public void debitar(long quantidade) {
+        if (quantidade <= 0 || quantidade > saldo) throw new IllegalArgumentException("Saldo insuficiente ou quantidade inválida.");
+        saldo -= quantidade;
+    }
 }

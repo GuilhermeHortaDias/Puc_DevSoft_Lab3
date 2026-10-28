@@ -1,4 +1,5 @@
-export type Perfil = 'ALUNO' | 'EMPRESA'
+export type PerfilCadastro = 'ALUNO' | 'EMPRESA'
+export type Perfil = PerfilCadastro | 'PROFESSOR'
 export interface Sessao {
   id: string
   login: string
@@ -29,6 +30,43 @@ export interface NovoCadastro {
   senha: string
   dados: DadosCadastro
 }
+export interface Professor {
+  id: string
+  login: string
+  nome: string
+  cpf: string
+  departamento: string
+  instituicao: string
+  instituicaoId: number
+}
+export interface AlunoDestinatario {
+  id: string
+  nome: string
+  curso: string
+}
+export interface Movimentacao {
+  id: string
+  tipo: 'CREDITO_SEMESTRAL' | 'RECONHECIMENTO' | 'RESGATE'
+  dataHora: string
+  quantidade: number
+  direcao: 'ENTRADA' | 'SAIDA'
+  descricao: string
+  contraparte: string | null
+  motivo: string | null
+  cupomCodigo: string | null
+}
+export interface Conta {
+  saldo: number
+  extrato: Movimentacao[]
+}
+export interface Vantagem {
+  id: string
+  empresaId: string
+  empresa: string
+  descricao: string
+  custo: number
+  fotoUrl: string
+}
 
 export class ApiError extends Error {
   status: number
@@ -36,8 +74,16 @@ export class ApiError extends Error {
   constructor(status: number, mensagem: string, campos: Record<string, string> = {}) {
     super(mensagem)
     this.status = status
-    this.campos = campos
+    this.campos = campos ?? {}
   }
+}
+export function mensagemErro(erro: unknown): string {
+  if (!(erro instanceof ApiError))
+    return 'Não foi possível conectar ao sistema. Confira sua conexão e tente novamente.'
+  const campos = Object.entries(erro.campos)
+    .map(([campo, mensagem]) => `${campo.replace('dados.', '')}: ${mensagem}`)
+    .join(' · ')
+  return campos ? `${erro.message} ${campos}` : erro.message
 }
 
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -74,6 +120,6 @@ export async function entrar(login: string, senha: string): Promise<Sessao> {
   })
   return request<Sessao>('/auth/me')
 }
-export function recurso(perfil: Perfil): string {
+export function recurso(perfil: PerfilCadastro): string {
   return perfil === 'ALUNO' ? '/alunos' : '/empresas'
 }

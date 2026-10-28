@@ -10,6 +10,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.server.ResponseStatusException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -26,10 +29,15 @@ public class ApiExceptionHandler {
     }
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ErroSaida> duplicidade() {
-        return ResponseEntity.status(409).body(new ErroSaida("Já existe cadastro com esse login ou CPF.", Map.of()));
+        return ResponseEntity.status(409).body(new ErroSaida("Já existe um registro com os dados únicos informados. Confira login, CPF ou identificação da operação.", Map.of()));
     }
-    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
+            MissingServletRequestPartException.class, MissingServletRequestParameterException.class})
     ResponseEntity<ErroSaida> formato() {
         return ResponseEntity.badRequest().body(new ErroSaida("Formato dos dados inválido.", Map.of()));
+    }
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ResponseEntity<ErroSaida> tamanho() {
+        return ResponseEntity.badRequest().body(new ErroSaida("A foto deve ter até 2 MB e a requisição até 3 MB.", Map.of()));
     }
 }

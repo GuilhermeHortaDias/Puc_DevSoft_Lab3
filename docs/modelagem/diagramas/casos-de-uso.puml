@@ -11,12 +11,11 @@ skinparam usecaseBorderColor #2563EB
 skinparam actorBorderColor #334155
 skinparam rectangleBorderColor #94A3B8
 skinparam packageStyle rectangle
-title Sistema de Moeda Estudantil\nCasos de uso | Lab03S01
+title Sistema de Moeda Estudantil\nCasos de uso — versão atual
 
 actor Aluno as A
 actor Professor as P
 actor "Empresa parceira" as E
-actor "Agendador semestral" as T <<integração proposta>>
 actor "Serviço de email" as MAIL <<sistema externo>>
 
 rectangle "Sistema de Moeda Estudantil" {
@@ -45,7 +44,6 @@ P -- UC07
 E -- UC02
 E -- UC03
 E -- UC05
-T -- UC09
 UC06 ..> UC10 : <<include>>
 UC08 ..> UC11 : <<include>>
 UC08 ..> UC12 : <<include>>
@@ -60,7 +58,8 @@ end note
 note bottom of UC09
   1.000 moedas por professor/semestre.
   Saldo anterior preservado (RF04).
-  Integração autenticada; sem tela nova (D04).
+  Bean interno: startup + janeiro/julho (D04).
+  Sem endpoint público ou ator administrativo.
 end note
 legend bottom
   Associações indicam participação, não ordem temporal.

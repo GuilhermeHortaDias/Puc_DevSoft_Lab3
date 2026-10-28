@@ -1,41 +1,45 @@
-# Modelo ER e persistência — fase 2
+# Modelo ER e persistência
 
 [Sumário](../../SUMARIO.md) · [Código do diagrama](diagramas/modelo-er.puml) · [SVG](diagramas/modelo-er.svg) · [PNG](diagramas/modelo-er.png)
 
 ![Modelo ER](diagramas/modelo-er.svg)
 
-O diagrama cobre o sistema previsto nos requisitos. **As cinco tabelas brancas estão implementadas; as tabelas cinzas são planejamento das próximas funções.** O estado real do banco é definido pelas [migrações Flyway](../../backend/src/main/resources/db/migration/).
+O diagrama acompanha o esquema de implementação do sistema. As [migrações Flyway](../../backend/src/main/resources/db/migration/) são a fonte do esquema executável; alterações acrescentam versões, sem reescrever migrações aplicadas. O PDF da sprint 1 permanece como registro histórico.
 
-## Estratégia implementada
+## Estratégia de persistência e MVC
 
-**ORM:** Jakarta Persistence (JPA), implementada pelo Hibernate. **Acesso aos dados:** interfaces Spring Data JPA `Repository`. Esse é o ponto de abstração da persistência; criar DAOs paralelos repetiria a mesma responsabilidade.
+Jakarta Persistence (JPA), implementada por Hibernate, mapeia as entidades; interfaces Spring Data JPA acessam o PostgreSQL real. Não há DAO paralelo nem H2 como substituto dos testes de integração. Flyway aplica alterações e `spring.jpa.hibernate.ddl-auto=validate` verifica o mapeamento, sem gerar esquema.
 
-**Banco:** PostgreSQL 17.11, executado por Docker Compose. Flyway aplica alterações versionadas na inicialização. `spring.jpa.hibernate.ddl-auto=validate` confere o mapeamento; Hibernate não cria nem modifica o esquema. Não se usa H2 como substituto nos testes.
+React apresenta a View; controllers recebem HTTP e DTOs; services validam autorização/regras e delimitam transações; repositories acessam o banco. Bean Validation verifica entradas. `open-in-view=false` evita consultas implícitas na serialização. Entidades JPA e hashes de senha não são respostas da API.
 
-**MVC:** React apresenta a View; controllers expõem HTTP; services compõem o Model com as entidades e regras; repositories fazem o acesso ao banco. DTOs limitam o que entra e sai da API. `open-in-view=false` impede consultas implícitas durante a serialização da resposta.
+`Usuario` é concreto. Aluno, empresa e professor usam seu UUID como PK e FK (`@MapsId`), por associação, sem herança. Aluno e professor possuem instituição explícita; o departamento do professor pertence à mesma instituição. Cada aluno/professor possui uma conta com titular único, saldo `bigint` armazenado e versão `@Version`; empresa não possui conta.
 
-O cadastro do aluno é uma transação: **usuário + aluno + conta com saldo zero**. O cadastro da empresa grava **usuário + empresa**, sem conta. Restrições `UNIQUE`, `NOT NULL`, `CHECK` e chaves estrangeiras complementam a validação da aplicação. Duplicidades retornam 409, inclusive em conflito concorrente, com rollback da transação.
+O cadastro do aluno confirma usuário, aluno e conta com saldo zero; o da empresa confirma usuário e empresa. Restrições `UNIQUE`, `NOT NULL`, `CHECK` e FKs complementam a validação. Duplicidade produz conflito e rollback. Login é normalizado para minúsculas. CPF tem 11 dígitos e unicidade; não há consulta de cadastros externos.
 
-`usuario.id` também é a chave de aluno/empresa (`@MapsId`). Um login pertence a um único perfil. O login é normalizado para minúsculas. Cada conta tem titular único e saldo não negativo; a coluna de versão prepara controle otimista para futuras movimentações. O CPF tem unicidade e formato de 11 dígitos; a versão inicial não verifica dígitos de controle nem consulta cadastros externos.
+## Transações de moedas
+
+Há uma tabela `movimentacao`, discriminada por `tipo`; não há tabelas separadas de crédito, reconhecimento, resgate, semestre ou cupom. A [tabela de campos condicionais](classes.md) detalha cada tipo. O código único do cupom é armazenado no próprio resgate, junto à quantidade debitada e à descrição histórica da vantagem. Foto da vantagem é `bytea`, com tipo PNG/JPEG.
+
+Services usam bloqueio pessimista nas contas, em ordem de UUID quando envolvem duas contas, revalidam saldo e confirmam **conta(s), movimentação e notificações na mesma transação**. Saldo não pode ficar negativo. A coluna de versão permanece como controle adicional de alteração da conta.
+
+A unicidade `(solicitante_id, requisicao_id)` protege contra repetição de comando. Um índice único parcial em `(destino_id, ano, semestre)`, para `CREDITO_SEMESTRAL`, impede crédito duplicado. Nesse registro, o solicitante é o professor creditado e a requisição usa UUID determinística para professor/período, sem criar usuário técnico. O crédito soma 1.000 ao saldo existente; não zera a conta. O bean interno executa na inicialização e em janeiro/julho, usa `America/Sao_Paulo` para ano/semestre e contempla professor que ingressa no semestre corrente. Não existe endpoint público para esse processamento.
+
+## Notificações e SMTP
+
+O reconhecimento grava uma notificação ao aluno; o resgate grava duas, para aluno e empresa, com o mesmo cupom. `notificacao` persiste destinatário, assunto, conteúdo, estado, tentativas, próxima tentativa e último erro. O worker lê somente registros confirmados e usa `JavaMailSender`. Falha/repetição de envio não refaz débito, crédito ou cupom. O envio externo não integra a transação do banco; sua intenção persistida integra.
+
+Mailpit atende o ambiente local; SMTP externo é configurado por variáveis de ambiente. Não há email de boas-vindas nem confirmação digital de utilização do cupom.
 
 ## Cadastros e segurança
 
-- Cadastro inicial é público. Consulta, atualização e inativação exigem sessão e acesso ao próprio cadastro. A listagem retorna somente o registro do titular, sem expor dados pessoais dos colegas. Não existe administrador no escopo atual.
-- Senhas usam BCrypt; mínimo de 8 caracteres e máximo de 72 bytes em UTF-8. Login e logout são tratados pelo Spring Security, com sessão HttpOnly e proteção CSRF. O React consulta `/api/auth/csrf` antes de cada alteração.
-- `DELETE` inativa o usuário e encerra a sessão atual. Dados e conta são conservados para histórico; sessões remanescentes também são impedidas de acessar os cadastros pelo serviço. Login e CPF continuam reservados. Não há reativação nesta versão.
-- Nome e email são os campos mínimos da empresa. Login e senha são informados somente no cadastro inicial e não são editáveis pelo CRUD desta fase.
-- A lista inicial contém PUC Minas como base acadêmica. A lista oficial de instituições participantes e os professores ainda precisam ser confirmados.
+- Cadastro inicial de aluno/empresa e login são públicos. Demais operações exigem sessão, CSRF e perfil autorizado. Cada usuário consulta, atualiza e inativa apenas seu cadastro; a listagem de cadastros não expõe colegas. O professor consulta alunos ativos da mesma instituição para reconhecer (D09).
+- BCrypt protege senhas; a política existente usa mínimo de 8 caracteres e máximo de 72 bytes UTF-8. Sessão usa cookie HttpOnly. O cliente obtém CSRF antes de alterações.
+- Exclusão significa inativação, conservando dados, histórico, login e CPF reservados. Sessões de usuário inativo não autorizam operações. Não há reativação ou administrador nesta versão.
+- Nome e email são os campos mínimos da empresa. Login/senha não são editáveis pelo CRUD do próprio cadastro.
+- Instituições, departamentos e professores são preparados por arquivo institucional JSON externo indicado em `INSTITUCIONAL_ARQUIVO`, sem cadastro público de professor. A base PUC Minas existente é preservada; o template de desenvolvimento contém somente dados fictícios. As credenciais de operação ficam fora do repositório.
 
-Estas são decisões de implementação do grupo, complementando os [requisitos e decisões](requisitos.md). A exclusão por inativação, a política de senha e o acesso ao próprio cadastro não são exigências literais do PDF.
-
-## Relações e regras das funções futuras
-
-Professor terá instituição e departamento coerentes entre si. Aluno e professor terão uma conta; empresa poderá publicar várias vantagens. Uma movimentação será reconhecimento, crédito semestral ou resgate, com o subtipo correspondente. Origem/destino serão obrigatórios conforme o tipo, como indicado no diagrama.
-
-Crédito terá unicidade por professor/semestre. Resgate conservará o custo debitado e terá exatamente um cupom, com código único. Notificações serão persistidas para envio após o commit e repetição independente da movimentação. As restrições entre subtipos e perfis precisarão de validação transacional e, quando apropriado, restrições adicionais nas novas migrações.
-
-Envio de moedas, agendamento, vantagens, cupons, SMTP e notificações **ainda não estão implementados**. Mailpit para desenvolvimento e SMTP via Spring Mail serão introduzidos quando os emails de movimentação entrarem no escopo. Não há email de boas-vindas previsto no enunciado.
+São decisões do grupo, separadas das exigências RF em [requisitos e decisões](requisitos.md). O significado de “seus alunos” continua sujeito à confirmação acadêmica; a aplicação adota mesma instituição.
 
 ## Verificação
 
-Os testes de integração em `backend/src/test` usam PostgreSQL real com Testcontainers e verificam cadastros, saldo inicial, hash da senha, rollback em duplicidade, autorização e inativação. Os testes de navegador em `frontend/e2e` percorrem os dois CRUDs contra o backend real. Comandos de execução estão no [README](../../README.md).
+Comandos de execução e verificação ficam no [README](../../README.md). Testes de integração usam PostgreSQL real. A aplicação deve preservar autorização por perfil, rollback, saldo não negativo, unicidade do comando e do crédito semestral, além de permitir repetir somente notificações após falha SMTP.

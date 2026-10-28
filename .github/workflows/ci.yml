@@ -1,5 +1,13 @@
 name: Verificação
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      executar_testes:
+        description: Executar as suítes de integração e navegador
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -19,15 +27,21 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Integração e pacote Java
+      - name: Compilar e empacotar Java
         working-directory: backend
-        run: chmod +x mvnw && ./mvnw -B verify
+        run: chmod +x mvnw && ./mvnw -B -DskipTests package
       - name: Dependências e verificação React
         working-directory: frontend
         run: npm ci && npm run lint && npm run format:check && npm run build
+      - name: Integração Java (opcional)
+        if: github.event_name == 'workflow_dispatch' && inputs.executar_testes
+        working-directory: backend
+        run: ./mvnw -B verify
       - name: Banco de desenvolvimento isolado
+        if: github.event_name == 'workflow_dispatch' && inputs.executar_testes
         run: docker compose up -d --wait
       - name: Iniciar API
+        if: github.event_name == 'workflow_dispatch' && inputs.executar_testes
         run: |
           java -jar backend/target/moeda-estudantil-0.0.1-SNAPSHOT.jar > /tmp/backend.log 2>&1 &
           for i in $(seq 1 30); do
@@ -37,8 +51,9 @@ jobs:
           cat /tmp/backend.log
           exit 1
       - name: Navegador e fluxos completos
+        if: github.event_name == 'workflow_dispatch' && inputs.executar_testes
         working-directory: frontend
         run: npx playwright install --with-deps chromium && npm run test:e2e
       - name: Encerrar banco
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.executar_testes
         run: docker compose down

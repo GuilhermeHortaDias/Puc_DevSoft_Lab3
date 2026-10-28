@@ -21,7 +21,8 @@ body {
 }
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 button {
@@ -40,7 +41,8 @@ a:focus-visible {
   outline-offset: 4px;
 }
 input,
-select {
+select,
+textarea {
   width: 100%;
   border: 1px solid #cbd4c8;
   border-radius: 9px;
@@ -50,12 +52,17 @@ select {
   min-height: 46px;
 }
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: 2px solid #48765c;
   outline-offset: 1px;
 }
 input::placeholder {
   color: #8c948e;
+}
+textarea {
+  resize: vertical;
+  line-height: 1.5;
 }
 label {
   display: flex;
