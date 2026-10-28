@@ -33,7 +33,7 @@ Cada documento de diagrama contém sua imagem e os links para a fonte `.puml` e 
 | Backend | Cadastros, acesso dos três perfis, moedas, vantagens, cupons, SMTP e JPA | [Código Java](backend/src/) |
 | Frontend | Cadastros, professor, saldo/extrato, reconhecimento, catálogo e resgate | [Código React](frontend/src/) |
 
-O ER e os diagramas atuais acompanham as migrações e o código. A entrega consolidada da sprint 1 é preservada como registro histórico. Comandos de execução e compilação sem suítes de testes estão no [README](README.md). Os slides e o tutorial da apresentação final ainda dependem da preparação acadêmica do grupo.
+O ER e os diagramas atuais acompanham as migrações e o código. A entrega consolidada da sprint 1 é preservada como registro histórico. Comandos de execução e compilação sem suítes de testes estão no [README](README.md). A apresentação está disponível em [PowerPoint editável](docs/apresentacao/Sistema-de-Moeda-Estudantil.pptx), com notas de fala, e em [PDF](docs/apresentacao/Sistema-de-Moeda-Estudantil.pdf). São 12 slides sobre a aplicação atual, com sequência para demonstração ao vivo. Para gerar novamente, instale `python-pptx` e `reportlab<5` e execute `python scripts/gerar-apresentacao.py`. O tutorial da apresentação final permanece pendente.
 
 ## Insumos de elaboração — consulta opcional
 
