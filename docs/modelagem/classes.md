@@ -2,37 +2,32 @@
 
 [Sumário](../../SUMARIO.md) · [Fonte editável](diagramas/classes.puml) · [SVG](diagramas/classes.svg) · [PNG](diagramas/classes.png)
 
-Este modelo define as entidades do negócio, seus dados e relacionamentos para orientar a implementação. Os atributos e as multiplicidades estão na figura; as regras que precisam de explicação estão abaixo.
+O modelo atual acompanha as entidades persistentes da aplicação. O PDF e o HTML da sprint 1 preservam a modelagem entregue naquela etapa; esta versão incorpora as decisões de implementação.
 
 ![Diagrama de classes](diagramas/classes.svg)
 
-## Organização do domínio
+## Identidade e vínculos
 
-| Grupo | Responsabilidade |
-| --- | --- |
-| Identidades e vínculo acadêmico | `Usuario` reúne credenciais. `TitularMoedas` reúne nome/CPF de aluno e professor. Alunos e professores se vinculam à instituição; professor também se vincula a departamento. `EmpresaParceira` oferece vantagens. |
-| Contas e movimentações | Cada titular possui uma `Conta`. `Movimentacao` é especializada em crédito semestral, reconhecimento e resgate, permitindo explicar o saldo e o extrato. |
-| Vantagens, cupons e comunicação | `Vantagem` pertence à empresa. Cada `Resgate` possui um `Cupom`. `NotificacaoEmail` registra o envio das mensagens e suas tentativas. |
+`Usuario` é uma classe concreta com UUID, login, hash da senha, perfil, situação e data de criação. `Aluno`, `Professor` e `EmpresaParceira` se associam a ela por chave primária compartilhada (`@MapsId`); não há herança JPA nem classe `TitularMoedas`. Cada usuário possui um perfil. Aluno e professor têm nome e CPF próprios e vínculo explícito com instituição; professor também possui departamento da mesma instituição (D11).
 
-Nome e CPF de aluno/professor são herdados de `TitularMoedas`; login e senhaHash são herdados de `Usuario`. Os demais campos exigidos aparecem diretamente nas classes e associações. Os tipos são conceituais; CPF e RG são textos, e `ReferenciaImagem` representa a foto da vantagem.
+Cada aluno/professor possui uma `Conta`, cujo titular é um `Usuario` único. Empresa não possui conta. `saldo` é um inteiro de 64 bits **armazenado**, atualizado na transação da movimentação; `versao` corresponde a `@Version`. O extrato é consultado pelos vínculos de origem e destino da movimentação.
 
-## Regras das movimentações
+## Registro único de movimentação
 
-| Tipo | Origem | Destino | Regra específica |
-| --- | --- | --- | --- |
-| `CreditoSemestral` | Ausente | Conta do professor | 1.000 moedas, um crédito por professor/semestre; preserva saldo anterior |
-| `Reconhecimento` | Conta do professor | Conta do aluno | Motivo obrigatório; mesma quantidade debitada e creditada |
-| `Resgate` | Conta do aluno | Ausente | Valor debitado igual ao custo na confirmação; um cupom por resgate |
+`Movimentacao` é concreta. Crédito semestral, reconhecimento e resgate são valores de `tipo`, sem classes/tabelas de subtipo. Período e cupom são metadados desse registro, sem entidades `Semestre` ou `Cupom`.
 
-Uma movimentação confirmada gera as entradas/saídas dos extratos. O reconhecimento é um único registro consultado por professor e aluno. O saldo deriva de **entradas menos saídas**, e as operações devem preservar saldo não negativo.
+| Tipo | Campos condicionais obrigatórios | Campos ausentes |
+| --- | --- | --- |
+| `CREDITO_SEMESTRAL` | Destino professor, quantidade 1.000, ano e semestre | Origem, motivo, vantagem e cupom |
+| `RECONHECIMENTO` | Origem professor, destino aluno ativo da mesma instituição, motivo não vazio, quantidade positiva | Vantagem, cupom e período |
+| `RESGATE` | Origem aluno, vantagem, quantidade igual ao custo debitado, descrição histórica e código único do cupom | Destino, motivo e período |
 
-## Relações que exigem atenção
+Todas possuem UUID, data/hora, solicitante e UUID da requisição. A unicidade `(solicitante, requisicaoId)` impede repetir um comando. O crédito é único por `(destino, ano, semestre)`. A identidade do processo dispara o crédito internamente, sem usuário administrador ou endpoint público. No registro desse crédito, o professor creditado é o solicitante e a requisição tem UUID determinística por professor/período.
 
-- Aluno/professor possuem uma conta cada; a empresa não possui conta de moedas.
-- Professor e seu departamento pertencem à mesma instituição.
-- Cada vantagem pertence a uma empresa; uma empresa pode oferecer várias vantagens.
-- Cada resgate confirmado possui exatamente um cupom, com código único.
-- Reconhecimento demanda um email ao aluno; resgate demanda dois emails com o mesmo código. A multiplicidade `0..*` das notificações permite representar mensagens ainda em processamento.
-- Os losangos indicam composição: conta vinculada ao titular e cupom vinculado ao resgate. Isso não determina exclusão em cascata dos registros na futura persistência.
+Débito e crédito bloqueiam as contas em ordem de UUID e preservam saldo não negativo. O resgate guarda custo em `quantidade` e descrição em `descricaoVantagem`, conservando o histórico. O código do cupom pertence ao próprio registro do resgate e é compartilhado nos emails do aluno e da empresa.
 
-O serviço de moedas do [modelo de componentes](componentes.md) coordena débito, crédito, registro e cupom em conjunto. As escolhas complementares estão em [requisitos e decisões](requisitos.md).
+## Vantagem e comunicação
+
+`Vantagem` pertence a uma empresa, possui descrição, custo positivo e foto binária PNG/JPEG com seu tipo. `NotificacaoEmail` contém destinatário, assunto, conteúdo, estado, tentativas, próxima tentativa e último erro. Reconhecimento cria uma notificação; resgate cria duas. Elas são gravadas **na mesma transação** de conta e movimentação. O worker SMTP lê somente registros confirmados e repete apenas o envio; não movimenta moedas nem gera outro cupom.
+
+As regras de autorização e as transações pertencem aos services do [modelo MVC](componentes.md). Restrições físicas e critérios de persistência estão no [modelo ER](persistencia.md); os identificadores RF/D estão em [requisitos e decisões](requisitos.md).

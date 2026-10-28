@@ -1,0 +1,145 @@
+@startuml
+title Modelo ER — Sistema de Moeda Estudantil\nEsquema de implementação
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 13
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #194E45
+
+entity "instituicao" as instituicao {
+  * id : bigint <<PK>>
+  --
+  * nome : varchar(150) <<UQ>>
+}
+entity "usuario" as usuario {
+  * id : uuid <<PK>>
+  --
+  * login : varchar(80) <<UQ>>
+  * senha_hash : varchar(100)
+  * perfil : varchar(20)
+  * ativo : boolean
+  * criado_em : timestamptz
+}
+entity "aluno" as aluno {
+  * id : uuid <<PK, FK usuario>>
+  --
+  * nome : varchar(150)
+  * email : varchar(254)
+  * cpf : varchar(11) <<UQ>>
+  * rg : varchar(30)
+  * endereco : varchar(300)
+  * curso : varchar(150)
+  * instituicao_id : bigint <<FK>>
+}
+entity "empresa_parceira" as empresa {
+  * id : uuid <<PK, FK usuario>>
+  --
+  * nome : varchar(150)
+  * email : varchar(254)
+}
+entity "departamento" as departamento {
+  * id : uuid <<PK>>
+  --
+  * nome : varchar(150)
+  * instituicao_id : bigint <<FK>>
+}
+entity "professor" as professor {
+  * id : uuid <<PK, FK usuario>>
+  --
+  * nome : varchar(150)
+  * cpf : varchar(11) <<UQ>>
+  * instituicao_id : bigint <<FK>>
+  * departamento_id : uuid <<FK>>
+}
+entity "conta" as conta {
+  * id : uuid <<PK>>
+  --
+  * titular_id : uuid <<FK usuario, UQ>>
+  * saldo : bigint
+  * versao : bigint
+}
+entity "vantagem" as vantagem {
+  * id : uuid <<PK>>
+  --
+  * empresa_id : uuid <<FK empresa_parceira>>
+  * descricao : varchar(2000)
+  * custo : bigint
+  * foto : bytea
+  * tipo_foto : varchar(40)
+}
+entity "movimentacao" as movimentacao {
+  * id : uuid <<PK>>
+  --
+  * tipo : varchar(30)
+  * quantidade : bigint
+  * data_hora : timestamptz
+  origem_id : uuid <<FK conta>>
+  destino_id : uuid <<FK conta>>
+  motivo : varchar(2000)
+  vantagem_id : uuid <<FK vantagem>>
+  descricao_vantagem : varchar(2000)
+  cupom_codigo : varchar(40) <<UQ>>
+  ano : integer
+  semestre : integer
+  * solicitante_id : uuid <<FK usuario>>
+  * requisicao_id : uuid
+}
+entity "notificacao" as notificacao {
+  * id : uuid <<PK>>
+  --
+  * movimentacao_id : uuid <<FK>>
+  * destinatario : varchar(254)
+  * assunto : varchar(200)
+  * conteudo : text
+  * estado : varchar(15)
+  * tentativas : integer
+  * proxima_tentativa : timestamptz
+  ultimo_erro : varchar(300)
+}
+
+instituicao ||--o{ aluno
+usuario ||--o| aluno
+usuario ||--o| empresa
+usuario ||--o| professor
+usuario ||--o| conta
+instituicao ||--o{ departamento
+instituicao ||--o{ professor
+departamento ||--o{ professor
+conta |o--o{ movimentacao : origem
+conta |o--o{ movimentacao : destino
+usuario ||--o{ movimentacao : solicitante
+empresa ||--o{ vantagem
+vantagem |o--o{ movimentacao : resgate
+movimentacao ||--o{ notificacao
+
+note bottom of usuario
+  PK compartilhada nos perfis (@MapsId), sem herança.
+  Aluno/professor: uma conta; empresa: nenhuma.
+  Um perfil por usuário; inativação conserva histórico.
+end note
+note bottom of professor
+  Departamento e professor devem ter a mesma instituição.
+end note
+note bottom of movimentacao
+  Crédito: destino professor + ano/semestre; quantidade = 1.000.
+  Reconhecimento: origem professor + destino aluno + motivo.
+  Resgate: origem aluno + vantagem + descrição + cupom.
+  Demais campos condicionais ausentes conforme o tipo.
+  UNIQUE (solicitante_id, requisicao_id).
+  Índice único parcial (destino_id, ano, semestre)
+  WHERE tipo = 'CREDITO_SEMESTRAL'.
+end note
+note bottom of notificacao
+  Gravada na transação da movimentação.
+  Worker SMTP lê após commit e repete somente email.
+end note
+legend bottom
+  * NOT NULL; campos sem * podem ser obrigatórios conforme tipo de movimentação.
+  PK: chave primária. FK: chave estrangeira. UQ: único.
+  Saldo >= 0; quantidade/custo > 0; semestre em {1,2}; foto PNG/JPEG.
+  Cupom está no resgate; período está no crédito. Sem tabelas de subtipos.
+  Flyway é a fonte do esquema; Hibernate valida os mapeamentos.
+endlegend
+@enduml

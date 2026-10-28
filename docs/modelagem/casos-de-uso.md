@@ -4,7 +4,7 @@
 
 ![Casos de uso](diagramas/casos-de-uso.svg)
 
-Os casos de uso representam os objetivos dos atores. A figura e os fluxos abaixo compõem este entregável. As escolhas D01–D11 estão em [requisitos e decisões](requisitos.md).
+Os casos de uso representam os objetivos dos atores. A figura e os fluxos abaixo compõem este entregável. As escolhas D01–D15 estão em [requisitos e decisões](requisitos.md).
 
 ## Atores e fronteira
 
@@ -13,18 +13,17 @@ Os casos de uso representam os objetivos dos atores. A figura e os fluxos abaixo
 | Aluno | Cadastrar-se, autenticar-se, consultar vantagens, saldo/extrato e resgatar |
 | Professor | Autenticar-se, reconhecer aluno enviando moedas e consultar saldo/extrato |
 | Empresa parceira | Cadastrar-se, autenticar-se e cadastrar vantagens |
-| Agendador semestral | Disparar crédito periódico, como integração proposta em D04 |
 | Serviço de email | Participar do envio de notificações, como sistema externo de apoio |
 
 Receber um email é consequência dos fluxos de envio e resgate, não exige que seu destinatário opere uma tela. A empresa confere o cupom **presencialmente**, usando o email recebido; não foi criado um caso de uso de baixa online.
 
-Instituições e professores são dados pré-cadastrados; sua preparação é precondição de uso.
+Instituições, departamentos e professores são dados pré-cadastrados por arquivo JSON externo configurado em `INSTITUCIONAL_ARQUIVO` (D12); sua preparação é precondição de uso. O crédito semestral é comportamento interno, sem ator administrativo ou integração HTTP pública.
 
 ## Convenções e precondições comuns
 
 - UC01, UC02 e UC03 são públicos, pela decisão D01.
 - UC04 a UC08 exigem sessão válida e perfil autorizado; UC07 atende aluno e professor, com visibilidade apenas da própria conta.
-- UC09 exige integração autenticada, período identificado e professores pré-cadastrados.
+- UC09 é iniciado por bean interno na inicialização e em janeiro/julho; exige período identificado e professores pré-cadastrados.
 - UC10, UC11 e UC12 são comportamentos incluídos, executados internamente no contexto da operação autorizada. Não expõem endpoint público de emissão de cupom.
 - Quantidade/custo positivo, aluno com saldo inicial zero, resgate com saldo suficiente e isolamento de contas são decisões D02/D05.
 - Em recusas de negócio, não alterar saldo, não registrar operação confirmada, não gerar cupom e não enviar notificação de sucesso.
@@ -103,17 +102,17 @@ Instituições e professores são dados pré-cadastrados; sua preparação é pr
 
 ## UC09 — Creditar moedas do semestre
 
-**Ator:** Agendador semestral (D04). **Requisito:** RF04. **História:** HU06.
+**Disparo interno:** bean de crédito semestral sob identidade do processo (D04), sem endpoint público. **Requisito:** RF04. **História:** HU06.
 
 **Fluxo principal:** (1) identificar semestre e professor; (2) verificar ausência de crédito para esse par; (3) somar 1.000 ao saldo e registrar crédito semestral; (4) repetir para os demais professores elegíveis. **Alternativa:** crédito já existente → não duplicar. Cada crédito individual deve ser atômico; reexecutar processamento interrompido preserva créditos já feitos.
 
-**Pós-condição:** saldo anterior preservado e crédito rastreável. Não há crédito para alunos/empresas. Calendário e elegibilidade no ingresso tardio são questões abertas, não resolvidas por este caso de uso.
+**Pós-condição:** saldo anterior preservado e crédito rastreável. Não há crédito para alunos/empresas. Ano/semestre usam `America/Sao_Paulo`; o crédito ocorre na inicialização e em janeiro/julho, inclusive para professor que ingressa no semestre corrente (D04).
 
 ## UC10 — Notificar recebimento por email
 
 **Ator de apoio:** Serviço de email. **Requisito:** RF06. **História:** HU08. **Incluído por:** UC06.
 
-**Precondição:** reconhecimento confirmado. **Fluxo principal:** preparar mensagem ao email do aluno com referência ao reconhecimento, solicitar envio e registrar resultado. **Alternativa:** envio falha → registrar falha e permitir reprocessamento, sem repetir movimentação.
+**Precondição:** reconhecimento autorizado. **Fluxo principal:** gravar mensagem ao email do aluno com referência ao reconhecimento na mesma transação da movimentação; após commit, worker solicita envio e registra resultado. **Alternativa:** envio falha → registrar falha e permitir reprocessamento, sem repetir movimentação.
 
 **Pós-condição:** solicitação rastreável; envio deve ser concluído pelo componente de notificação. Aceite do provedor não equivale a prova de leitura pelo aluno. Conteúdo com quantidade, professor e motivo é a proposta adotada para explicar a premiação.
 
@@ -121,7 +120,7 @@ Instituições e professores são dados pré-cadastrados; sua preparação é pr
 
 **Requisito:** RF13. **História:** HU12. **Incluído por:** UC08.
 
-**Fluxo principal:** gerar código único, associar cupom ao resgate e registrar emissão. A criação integra a transação de UC08: somente existe como cupom confirmado quando o resgate também foi confirmado. **Alternativa:** colisão de código → gerar outro; impossibilidade de criação → não confirmar o resgate.
+**Fluxo principal:** gerar código único, armazená-lo na movimentação de resgate e registrar emissão; não há tabela separada de cupom. A criação integra a transação de UC08: somente existe como cupom confirmado quando o resgate também foi confirmado. **Alternativa:** colisão de código → gerar outro; impossibilidade de criação → não confirmar o resgate.
 
 **Pós-condição:** um cupom por resgate; acesso ao código permite conferência presencial.
 
@@ -129,12 +128,12 @@ Instituições e professores são dados pré-cadastrados; sua preparação é pr
 
 **Ator de apoio:** Serviço de email. **Requisitos:** RF14, RF15. **Histórias:** HU12, HU13. **Incluído por:** UC08.
 
-**Precondição:** resgate/cupom confirmados. **Fluxo principal:** (1) obter email do aluno e da empresa da vantagem; (2) preparar mensagens com o mesmo código e identificação da vantagem; (3) enviar às duas partes e registrar resultados individuais.
+**Precondição:** resgate autorizado. **Fluxo principal:** (1) obter email do aluno e da empresa da vantagem; (2) persistir duas mensagens com o mesmo código e descrição histórica na transação do resgate; (3) após commit, worker envia às duas partes e registra resultados individuais.
 
 **Alternativa:** um envio falha → reprocessar somente a notificação pendente/falha, preservando o código original e o débito. **Pós-condição:** as duas mensagens devem chegar aos respectivos serviços de email; confirmação de leitura ou entrega física não é controlada pelo sistema proposto.
 
 ## Leitura das relações
 
-`UC06 → UC10`, `UC08 → UC11` e `UC08 → UC12` são `<<include>>`: os comportamentos são necessários no processo. Isso não significa que o envio externo do email participe da transação do banco. O sistema registra/prepara notificações e trata a entrega externa após a confirmação (D07).
+`UC06 → UC10`, `UC08 → UC11` e `UC08 → UC12` são `<<include>>`: os comportamentos são necessários no processo. Isso não significa que o envio externo do email participe da transação do banco. O sistema grava notificações na mesma transação de moedas/cupom e trata a entrega externa após commit (D07). Repetir uma requisição com o mesmo UUID não duplica a operação (D05).
 
 Login é precondição das operações protegidas; a sessão pode atender a várias ações.

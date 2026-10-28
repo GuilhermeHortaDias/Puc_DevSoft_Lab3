@@ -9,70 +9,59 @@ skinparam ArrowColor #475569
 skinparam componentStyle uml2
 skinparam componentBackgroundColor #EFF6FF
 skinparam componentBorderColor #2563EB
-skinparam interfaceBackgroundColor #FFFFFF
-skinparam interfaceBorderColor #475569
 skinparam packageStyle rectangle
 skinparam packageBorderColor #94A3B8
-title Sistema de Moeda Estudantil\nComponentes lógicos e MVC | Lab03S01
+title Sistema de Moeda Estudantil\nComponentes lógicos e MVC — implementação atual
 
-package "Sistema de Moeda Estudantil" {
+package "Aplicação" {
   package "View" {
-    component "V01\nInterface web\nAluno | Professor | Empresa" as WebViews
+    component "V01\nInterface React/TypeScript" as WebViews
   }
   package "Controller" {
-    component "C01\nControladores de acesso\ne operações" as Controllers
-    interface "IRequisicoes" as IWeb
-    Controllers -left- IWeb
+    component "C01\nControllers HTTP + DTOs\nBean Validation" as Controllers
+    component "M01\nSpring Security\nSessão + CSRF" as Auth
   }
-  package "Model" {
-    component "M01\nAutenticação e autorização" as Auth
+  package "Model / services transacionais" {
     component "M02\nCadastros e catálogo" as Catalog
-    component "M03\nContas, reconhecimento\ne resgate" as Coins
-    component "M04\nNotificações" as Notifications
-    interface "IAcesso" as IAuth
-    interface "ICadastrosCatalogo" as ICatalog
-    interface "IMoedas" as ICoins
-    interface "INotificacoes" as INotifications
-    Auth -left- IAuth
-    Catalog -left- ICatalog
-    Coins -left- ICoins
-    Notifications -left- INotifications
+    component "M03\nMoedas e histórico\nReconhecimento / resgate / crédito" as Coins
+    component "M04\nNotificações persistidas\nWorker de tentativas" as Notifications
   }
-  package "Adaptadores de infraestrutura" {
-    component "P01\nPersistência" as Persistence
-    component "E01\nAdaptador de email" as EmailAdapter
-    interface "IPersistencia" as IPersistence
-    interface "IEmail" as IEmail
-    Persistence -left- IPersistence
-    EmailAdapter -left- IEmail
+  package "Infraestrutura" {
+    component "P01\nSpring Data JPA / Hibernate\nFlyway" as Persistence
+    component "E01\nJavaMailSender\nAdaptador SMTP" as EmailAdapter
+    component "T01\nCrédito interno\nStartup + janeiro/julho" as Scheduler
+    component "I01\nPré-cadastro institucional\nINSTITUCIONAL_ARQUIVO" as Institutional
   }
 }
+database "PostgreSQL" as Database #F0FDF4
+component "SMTP\nMailpit local / provedor externo" as Provider #F0FDF4
+artifact "JSON institucional externo" as Input #FFF7ED
 
-component "T01\nAgendador semestral\n<<integração proposta>>" as Scheduler #FFF7ED
-component "Serviço de email\n<<externo>>" as Provider #F0FDF4
-
-WebViews ..> IWeb : solicita ações e recebe resultado
-Controllers ..> IAuth : sessão e perfil
-Controllers ..> ICatalog : cadastro e catálogo
-Controllers ..> ICoins : envio, extrato, resgate
-Auth ..> IPersistence : credenciais
-Catalog ..> IPersistence : usuários, vínculos, vantagens
-Coins ..> IPersistence : operação atômica
-Coins ..> INotifications : solicita após confirmação
-Notifications ..> IPersistence : estado e reprocessamento
-Notifications ..> IEmail : enviar mensagem
-EmailAdapter ..> Provider : integração de envio
-Scheduler ..> ICoins : crédito único por semestre
-Scheduler ..> IAuth : identidade técnica
+WebViews --> Controllers : HTTP / JSON / fotos
+Controllers ..> Auth : sessão e perfil
+Controllers --> Catalog
+Controllers --> Coins
+Auth --> Persistence : credenciais
+Catalog --> Persistence
+Coins --> Persistence : locks + saldos + movimentação
+Coins --> Notifications : grava intenção na mesma transação
+Notifications --> Persistence : confirmadas + tentativas
+Notifications --> EmailAdapter
+EmailAdapter --> Provider : SMTP após commit
+Persistence --> Database
+Scheduler --> Coins : execução interna idempotente
+Institutional --> Catalog : dados iniciais
+Input --> Institutional
 
 note bottom of Coins
-  Model aplica regras de saldo,
-  justificativa, cupom e crédito.
-  Transação une moedas e histórico.
+  Services validam autorização e regras.
+  Conta(s), movimentação e notificações:
+  uma transação de banco.
+  Repetição SMTP não chama moedas.
 end note
 legend bottom
-  Círculo + linha: interface fornecida. Seta tracejada: consumidor depende do contrato.
-  São módulos lógicos, sem exigir serviços separados. Tecnologia e banco não definidos.
-  Pré-cadastro institucional é precondição; não há módulo administrativo novo.
+  Módulos lógicos da mesma aplicação; setas são dependências, não interfaces Java.
+  Agendador é bean interno sob identidade do processo, sem ator administrativo ou endpoint público.
+  Banco é definido por Flyway; Hibernate apenas valida. API usa DTOs, nunca entidades.
 endlegend
 @enduml
