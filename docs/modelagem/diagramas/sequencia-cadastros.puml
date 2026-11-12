@@ -1,0 +1,68 @@
+@startuml
+title DS01 — Cadastros de aluno e empresa (UC01 e UC02)
+hide footbox
+autonumber
+actor "Aluno / Empresa" as ator
+boundary "Interface React" as ui
+control "Spring Security" as security
+control "CadastrosController" as controller
+control "CadastrosService" as service
+participant "PasswordEncoder\n(BCrypt)" as bcrypt
+participant "Repositories JPA\nUsuario, Aluno, Empresa,\nInstituicao e Conta" as repo
+database PostgreSQL as db
+ator -> ui : Informar dados e credenciais
+ui -> security : GET /api/auth/csrf
+security --> ui : Token e nome do header
+opt Cadastro de aluno
+  ui -> controller : GET /api/instituicoes
+  controller -> service : listarInstituicoes()
+  service -> repo : InstituicaoRepository.findAll(...)
+  repo -> db : Consultar instituições pré-cadastradas
+  db --> repo : Instituições
+  repo --> service : Instituições
+  service --> controller : List<InstituicaoSaida>
+  controller --> ui : 200 / instituições para seleção
+end
+ui -> security : POST /api/alunos ou /api/empresas\nDTO + header CSRF
+alt Token ausente ou inválido
+  security --> ui : 403
+else CSRF válido
+  security -> controller : Encaminhar requisição pública
+  controller -> controller : Bean Validation do DTO
+  alt Campos inválidos
+    controller --> ui : 400 / erros de validação
+  else Campos válidos
+    controller -> service : cadastrarAluno(entrada) ou cadastrarEmpresa(entrada)
+    activate service
+    group Transação Spring / JPA
+      service -> repo : Validar instituição (aluno), login e CPF (aluno)
+      repo -> db : Consultar referências e duplicidades
+      db --> repo : Resultado
+      repo --> service : Resultado
+      alt Referência inválida ou duplicidade
+        service --> controller : Erro de negócio / rollback
+      else Cadastro permitido
+        service -> bcrypt : encode(senha)
+        bcrypt --> service : Hash BCrypt
+        service -> repo : Salvar Usuario e perfil
+        opt Aluno
+          service -> repo : Salvar Conta com saldo zero
+        end
+        repo -> db : INSERT e flush
+        db --> repo : Registros persistidos
+        repo --> service : Entidades gerenciadas
+        service -> service : Montar DTO sem senha/hash
+      end
+    end
+    service --> controller : DTO após commit ou erro
+    deactivate service
+    controller --> ui : 201 + Location / 400 / 409
+  end
+end
+ui --> ator : Exibir resultado
+note over service, db
+Empresa não recebe conta de moedas.
+Falha na transação não deixa cadastro parcial.
+Professores são importados por arquivo institucional, sem cadastro público.
+end note
+@enduml

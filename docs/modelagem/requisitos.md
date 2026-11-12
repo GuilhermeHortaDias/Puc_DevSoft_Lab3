@@ -2,7 +2,7 @@
 
 [Sumário](../../SUMARIO.md)
 
-Este documento reúne as regras que orientam os quatro entregáveis. **RF** identifica exigências extraídas do enunciado; **D** identifica escolhas propostas para completar detalhes que o enunciado não define. **UC** e **HU** apontam para os casos de uso e as histórias correspondentes.
+Este documento reúne as regras que orientam a modelagem e a implementação. **RF** identifica exigências extraídas do enunciado; **D** identifica escolhas propostas para completar detalhes que o enunciado não define. **UC** e **HU** apontam para os casos de uso e as histórias correspondentes. A [entrega Lab04S01](interacoes.md) relaciona essas regras aos diagramas de sequência e à visão geral de interação.
 
 ## Requisitos do enunciado
 

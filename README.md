@@ -1,6 +1,6 @@
 # Sistema de Moeda Estudantil
 
-Projeto acadêmico da **PUC Minas**, curso de Engenharia de Software, disciplina **Projeto de Software**, professora **Milena Menezes Adão**. Laboratório 3 — segundo semestre de 2026.
+Projeto acadêmico da **PUC Minas**, curso de Engenharia de Software, disciplina **Projeto de Software**, professora **Milena Menezes Adão**. Laboratórios 3 e 4 — segundo semestre de 2026.
 
 O sistema reconhece o mérito estudantil com moedas virtuais. Professores distribuem moedas aos alunos, que podem trocá-las por produtos ou descontos de empresas parceiras. Cada professor recebe **1.000 moedas por semestre**, acumuladas com seu saldo restante. As trocas geram cupons enviados por email ao aluno e à empresa.
 
@@ -15,6 +15,8 @@ O sistema reconhece o mérito estudantil com moedas virtuais. Professores distri
 A aplicação implementa os cadastros de aluno/empresa, o acesso dos três perfis, o crédito semestral, o envio e o extrato de moedas, as vantagens com foto, o resgate e os cupons com emails para aluno e empresa. A arquitetura segue MVC, com persistência JPA e migrações Flyway.
 
 **[Abrir os entregáveis e a aplicação no SUMÁRIO](SUMARIO.md).**
+
+**Entrega atual: [Lab04S01 — sequência e visão geral de interação](docs/modelagem/interacoes.md)**, primeira etapa da Release 02 no [enunciado do laboratório 4](LABORATORIO_4_LAB_DESENVOLVIMENTO_DE_SOFTWARE%20%281%29.pdf). Inclui oito diagramas de sequência, visão geral UML e correspondência dos casos de uso UC01–UC12 com a implementação existente. A implantação na nuvem pertence à etapa seguinte.
 
 [Relatório da sprint 1](docs/entrega-sprint-1/Lab03S01-Sistema-de-Moeda-Estudantil.pdf) · [Roteiro da sprint 1](docs/entrega-sprint-1/ROTEIRO_APRESENTACAO.md). Esses arquivos preservam a entrega histórica da primeira etapa; os modelos atuais ficam em `docs/modelagem/`.
 
@@ -78,6 +80,36 @@ npm.cmd run test:e2e
 
 Playwright inicia o frontend quando necessário e percorre os dois CRUDs contra a API real. Cria cadastros sintéticos `e2e-` e termina inativando-os; o histórico permanece no banco local. GitHub Actions executa build/lint/formatação em push/PR; as suítes existentes são opcionais em `workflow_dispatch`, com `executar_testes=true`.
 
+Em macOS/Linux, a mesma compilação básica pode ser feita com os comandos abaixo (Java 21 e Node instalados):
+
+```sh
+cd backend
+sh mvnw -B -DskipTests package
+cd ../frontend
+npm ci
+npm run build
+npm run lint
+npm run format:check
+```
+
+## Atualizar os diagramas UML
+
+As fontes e imagens ficam em `docs/modelagem/diagramas/`, incluindo as sequências e a visão geral de interação da Lab04S01. Na raiz, com PowerShell e Java disponíveis:
+
+```powershell
+./scripts/renderizar-diagramas.ps1
+```
+
+O script verifica o SHA-256 do PlantUML 1.2026.8, confere a sintaxe e exporta SVG/PNG. Em macOS/Linux, com o mesmo JAR validado em `.tools/plantuml-java8-1.2026.8.jar`, para atualizar somente os diagramas da Lab04S01:
+
+```sh
+java -Djava.awt.headless=true -jar .tools/plantuml-java8-1.2026.8.jar -charset UTF-8 -checkonly docs/modelagem/diagramas/sequencia-*.puml docs/modelagem/diagramas/visao-geral-interacao.puml
+java -Djava.awt.headless=true -jar .tools/plantuml-java8-1.2026.8.jar -charset UTF-8 -failfast2 -tsvg docs/modelagem/diagramas/sequencia-*.puml docs/modelagem/diagramas/visao-geral-interacao.puml
+java -Djava.awt.headless=true -jar .tools/plantuml-java8-1.2026.8.jar -charset UTF-8 -failfast2 -tpng docs/modelagem/diagramas/sequencia-*.puml docs/modelagem/diagramas/visao-geral-interacao.puml
+```
+
+Esses nove diagramas dispensam Graphviz. A renderização dos demais modelos existentes pode exigir Graphviz instalado.
+
 ## Emails
 
 Spring Mail envia as notificações registradas após a confirmação da operação. O worker tenta o envio periodicamente e conserva falhas para repetição, sem movimentar moedas de novo. No desenvolvimento, Mailpit captura os emails; não os entrega a caixas externas.
@@ -116,7 +148,7 @@ A implementação inicial em SQLite/SQLAlchemy está preservada em [sprint2/](sp
 | Local | Conteúdo | Uso |
 | --- | --- | --- |
 | [docs/modelagem/](docs/modelagem/) | Modelos atuais, requisitos e decisões | Material alinhado à implementação |
-| [docs/modelagem/diagramas/](docs/modelagem/diagramas/) | Fontes PlantUML e imagens dos quatro diagramas | Editar ou visualizar os modelos |
+| [docs/modelagem/diagramas/](docs/modelagem/diagramas/) | Fontes PlantUML e imagens dos modelos UML e ER | Editar ou visualizar os modelos |
 | [docs/insumos/](docs/insumos/README.md) | Resumo das referências usadas na elaboração | Consulta opcional sobre a origem das escolhas |
 | `backend/` e `frontend/` | Código executável e testes existentes | Aplicação |
 | `compose.yaml` e `scripts/dev.ps1` | Banco local e comandos de ambiente | Executar e verificar o projeto |

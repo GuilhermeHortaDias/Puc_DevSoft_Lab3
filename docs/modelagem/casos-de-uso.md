@@ -1,6 +1,6 @@
 # Diagrama e especificação de casos de uso
 
-[Sumário](../../SUMARIO.md) · [Fonte PlantUML](diagramas/casos-de-uso.puml) · [SVG](diagramas/casos-de-uso.svg) · [PNG](diagramas/casos-de-uso.png)
+[Sumário](../../SUMARIO.md) · [Fonte PlantUML](diagramas/casos-de-uso.puml) · [SVG](diagramas/casos-de-uso.svg) · [PNG](diagramas/casos-de-uso.png) · [Sequências e visão geral](interacoes.md)
 
 ![Casos de uso](diagramas/casos-de-uso.svg)
 
@@ -120,7 +120,7 @@ Instituições, departamentos e professores são dados pré-cadastrados por arqu
 
 **Requisito:** RF13. **História:** HU12. **Incluído por:** UC08.
 
-**Fluxo principal:** gerar código único, armazená-lo na movimentação de resgate e registrar emissão; não há tabela separada de cupom. A criação integra a transação de UC08: somente existe como cupom confirmado quando o resgate também foi confirmado. **Alternativa:** colisão de código → gerar outro; impossibilidade de criação → não confirmar o resgate.
+**Fluxo principal:** gerar código UUID, armazená-lo na movimentação de resgate e registrar emissão; não há tabela separada de cupom. A criação integra a transação de UC08: somente existe como cupom confirmado quando o resgate também foi confirmado. **Alternativa:** colisão de código → restrição única do banco recusa a persistência e a transação inteira é revertida; impossibilidade de criação → não confirmar o resgate. A implementação atual não faz nova geração automática dentro da mesma tentativa.
 
 **Pós-condição:** um cupom por resgate; acesso ao código permite conferência presencial.
 

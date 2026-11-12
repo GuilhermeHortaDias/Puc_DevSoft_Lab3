@@ -1,0 +1,62 @@
+@startuml
+title DS02 — Autenticar acesso (UC03)
+hide footbox
+autonumber
+actor "Aluno / Professor / Empresa" as ator
+boundary "Interface React" as ui
+control "Filtros Spring Security\nSecurityConfig" as security
+participant "UserDetailsService\nconfigurado em SecurityConfig" as users
+participant UsuarioRepository as repo
+database PostgreSQL as db
+participant "PasswordEncoder\n(BCrypt)" as bcrypt
+control CadastrosController as controller
+control CadastrosService as service
+ator -> ui : Informar login e senha
+ui -> controller : GET /api/auth/csrf
+controller --> ui : Token e nome do header
+ui -> security : POST /api/auth/login\nusername, password e CSRF
+alt CSRF inválido
+  security --> ui : 403
+else CSRF válido
+  security -> users : loadUserByUsername(login)
+  users -> repo : findByLogin(login normalizado)
+  repo -> db : SELECT usuario
+  db --> repo : Usuário ou vazio
+  repo --> users : Resultado
+  users --> security : Credenciais com hash, perfil e estado / erro
+  security -> bcrypt : Comparar senha com hash (se usuário encontrado)
+  bcrypt --> security : Resultado
+  alt Credenciais inválidas ou usuário inativo
+    security --> ui : 401 / mensagem genérica
+  else Credenciais válidas e usuário ativo
+    security -> security : Estabelecer contexto autenticado\ne proteger identificador da sessão
+    security --> ui : 200 / cookie de sessão
+    ui -> controller : GET /api/auth/me (cookie)
+    controller -> service : sessao(auth.getName())
+    service -> repo : Consultar usuário ativo
+    repo -> db : SELECT usuario
+    db --> repo : Usuário
+    repo --> service : Usuário
+    service -> service : Consultar nome no repository do perfil
+    service --> controller : SessaoSaida
+    controller --> ui : 200 / id, login, perfil e nome
+  end
+end
+ui --> ator : Exibir acesso permitido ou erro
+opt Sessão válida e usuário escolhe sair
+  ator -> ui : Sair
+  ui -> controller : GET /api/auth/csrf
+  controller --> ui : Token e nome do header
+  ui -> security : POST /api/auth/logout (cookie + CSRF)
+  security -> security : Invalidar sessão e limpar cookie
+  security --> ui : 204
+  ui --> ator : Mostrar acesso público
+end
+note over security
+Login é tratado pelos filtros, não por um controller próprio.
+Operações protegidas verificam sessão, perfil e CSRF nas escritas.
+POST /api/auth/logout encerra a sessão (204).
+A interface busca CSRF novamente antes de cada escrita,
+incluindo a primeira operação após o login.
+end note
+@enduml

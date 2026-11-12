@@ -1,0 +1,80 @@
+@startuml
+title DS04 — Enviar moedas e registrar notificação (UC06 inclui UC10)
+hide footbox
+autonumber
+actor Professor
+boundary "Interface React" as ui
+control "Spring Security" as security
+control MeritoController as controller
+control MoedasService as service
+control "UsuarioAtual / ProfessorService" as autorizacao
+participant "Repositories JPA\nProfessor, Aluno, Conta,\nMovimentacao e Notificacao" as repo
+database PostgreSQL as db
+Professor -> ui : Abrir reconhecimento
+ui -> controller : GET /api/professores/alunos (sessão PROFESSOR)
+controller -> autorizacao : alunos(login)
+autorizacao -> repo : Consultar alunos ativos da instituição
+repo -> db : SELECT alunos
+db --> repo : Lista
+repo --> autorizacao : Lista
+autorizacao --> controller : List<AlunoResumo>
+controller --> ui : 200 / alunos elegíveis
+Professor -> ui : Escolher aluno, quantidade e motivo
+ui -> security : POST /api/moedas/envios\nEnvioEntrada + requisicaoId + cookie + CSRF
+security -> controller : Encaminhar se PROFESSOR e CSRF válidos
+controller -> controller : Bean Validation (@Valid)
+controller -> service : enviar(login, entrada)
+activate service
+group Transação de reconhecimento
+  service -> autorizacao : exigir(login, "PROFESSOR")
+  autorizacao --> service : Usuário ativo / erro
+  service -> repo : findBySolicitanteIdAndRequisicaoId(...)
+  repo -> db : SELECT movimentacao
+  db --> repo : Operação anterior ou vazio
+  repo --> service : Resultado
+  alt Comando já registrado
+    service -> service : Comparar tipo, aluno, quantidade e motivo
+    service --> controller : DTO original / 409 se conteúdo diferente
+  else Comando novo
+    service -> repo : Consultar professor e aluno ativo
+    repo -> db : SELECT perfis e instituição
+    db --> repo : Perfis
+    repo --> service : Perfis
+    alt Aluno inválido ou de outra instituição
+      service --> controller : 400 / rollback
+    else Destinatário permitido
+      service -> repo : bloquearTitulares(professor, aluno)
+      repo -> db : SELECT contas ORDER BY conta UUID FOR UPDATE
+      db --> repo : Contas bloqueadas
+      repo --> service : Contas
+      service -> repo : Reconsultar solicitante + requisicaoId após bloqueio
+      repo -> db : SELECT movimentacao
+      db --> repo : Resultado
+      repo --> service : Resultado
+      alt Comando confirmado por outra requisição
+        service --> controller : DTO original / 409 se conteúdo diferente
+      else Novo e quantidade positiva e saldo suficiente
+        service -> service : Creditar aluno e debitar professor
+        service -> repo : save(RECONHECIMENTO)
+        service -> repo : save(NotificacaoEmail para aluno)
+        service -> repo : MovimentacaoRepository.flush()
+        repo -> db : INSERT movimento e notificação / UPDATE saldos
+        db --> repo : Persistência confirmada
+        repo --> service : Resultado
+        service --> controller : ExtratoSaida após commit
+      else Quantidade inválida, saldo insuficiente ou limite excedido
+        service --> controller : 400 ou 409 / rollback
+      end
+    end
+  end
+end
+deactivate service
+controller --> ui : 201 / resultado ou erro de negócio
+ui --> Professor : Exibir resultado
+note over service, db
+Débito, crédito, movimento e intenção de email são atômicos.
+Erro de persistência causa rollback, sem resultado parcial.
+Bean Validation rejeita motivo vazio antes do service (400).
+end note
+ref over repo, db : DS08 — Enviar emails pendentes (UC10), em execução independente após commit
+@enduml

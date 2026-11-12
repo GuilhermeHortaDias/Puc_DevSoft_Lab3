@@ -1,0 +1,55 @@
+@startuml
+title DS05 — Consultar saldo e extrato (UC07)
+hide footbox
+autonumber
+actor "Aluno / Professor" as ator
+boundary "Interface React" as ui
+control "Spring Security" as security
+control MeritoController as controller
+control MoedasService as service
+control UsuarioAtual as atual
+participant "ContaRepository / MovimentacaoRepository\nProfessorRepository / AlunoRepository" as repo
+database PostgreSQL as db
+ator -> ui : Abrir saldo e extrato
+ui -> security : GET /api/conta (cookie)
+alt Sem autenticação
+  security --> ui : 401
+else Perfil sem acesso
+  security --> ui : 403
+else Sessão ALUNO ou PROFESSOR
+  security -> controller : conta(auth)
+  controller -> service : consultar(auth.getName())
+  activate service
+  group Transação somente leitura
+    service -> atual : exigir(login, "ALUNO", "PROFESSOR")
+    atual --> service : Usuário ativo / erro
+    service -> repo : findByTitularId(usuario.id)
+    repo -> db : SELECT própria conta
+    db --> repo : Conta
+    repo --> service : Saldo
+    service -> repo : extrato(usuario.id)
+    repo -> db : SELECT movimentos da própria conta
+    db --> repo : Histórico ordenado
+    repo --> service : Movimentos
+    loop Cada movimento
+      service -> service : Identificar ENTRADA/SAIDA e tipo
+      opt Reconhecimento
+        service -> repo : Consultar nome da contraparte
+        repo -> db : SELECT professor ou aluno
+        db --> repo : Perfil
+        repo --> service : Nome
+      end
+      service -> service : Montar ExtratoSaida\n(motivo, descrição histórica e cupom se resgate)
+    end
+    service --> controller : ContaSaida(saldo, extrato)
+  end
+  deactivate service
+  controller --> ui : 200 / DTO
+end
+ui --> ator : Saldo e histórico / lista vazia / erro
+note over controller, service
+O endpoint não recebe id de conta de terceiros.
+Consulta não altera saldo nem histórico.
+Professor vê também seu crédito semestral.
+end note
+@enduml

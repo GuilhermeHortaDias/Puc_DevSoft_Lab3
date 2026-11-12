@@ -1,0 +1,75 @@
+@startuml
+title DVI01 — Visão geral de interação do Sistema de Moeda Estudantil
+skinparam shadowing false
+skinparam conditionStyle InsideDiamond
+skinparam activityBackgroundColor transparent
+skinparam activityBorderColor transparent
+skinparam activityDiamondBackgroundColor white
+skinparam activityDiamondBorderColor #334155
+skinparam ArrowColor #334155
+
+' Cada nó embute uma InteractionUse UML com quadro ref.
+' Os participantes ficam invisíveis porque este diagrama mostra fluxo de controle,
+' não linhas de vida. Os detalhes estão nos diagramas de sequência referenciados.
+!procedure $ref($name)
+:{{
+hide footbox
+skinparam shadowing false
+skinparam ParticipantBorderColor transparent
+skinparam ParticipantBackgroundColor transparent
+skinparam ParticipantFontColor transparent
+skinparam sequenceLifeLineBorderColor transparent
+participant " " as S
+ref over S : $name
+}};
+!endprocedure
+
+start
+if (Origem do disparo?) then ([interação humana])
+  if (Precisa cadastrar-se?) then ([aluno ou empresa sem cadastro])
+    $ref("DS01 — Cadastros / UC01 e UC02")
+  else ([cadastro existente])
+  endif
+  note right
+    Instituições e professores pré-cadastrados.
+    Cadastro recusado deve ser corrigido antes do login.
+  end note
+  $ref("DS02 — Autenticação / UC03")
+  if (Autenticação aceita?) then ([sessão válida])
+    repeat
+      switch (Perfil e operação escolhida)
+      case ([professor: reconhecer aluno])
+        $ref("DS04 — Enviar moedas / UC06 e UC10")
+      case ([aluno: catálogo e resgate])
+        $ref("DS03 — Consultar vantagens / UC04")
+        if (Confirmar resgate?) then ([sim])
+          $ref("DS06 — Resgatar e gerar cupom / UC08, UC11 e UC12")
+        else ([apenas consulta])
+        endif
+      case ([empresa: publicar ou listar ofertas])
+        $ref("DS03 — Vantagens / UC05")
+      case ([aluno ou professor: conta])
+        $ref("DS05 — Saldo e extrato / UC07")
+      endswitch
+      note right
+        Cada interação verifica autorização e dados.
+        Recusas não confirmam movimentação financeira.
+        DS04/DS06 gravam intenções de email no commit;
+        o envio externo ocorre em outro disparo (DS08).
+      end note
+    repeat while (Continuar na sessão?) is ([sim]) not ([não])
+    $ref("DS02 — Encerrar sessão")
+  else ([credenciais inválidas ou cadastro inativo])
+  endif
+elseif (Origem do disparo?) then ([aplicação pronta ou janeiro/julho])
+  $ref("DS07 — Crédito semestral / UC09")
+else ([worker de email: intervalo de 10 s])
+  $ref("DS08 — Emails pendentes / UC10 e UC12")
+endif
+stop
+legend bottom
+  **ref**: uso de interação detalhada em um diagrama de sequência DS01–DS08.
+  Losangos: decisão/mesclagem; [guarda]: condição do fluxo.
+  Cada percurso representa um disparo; jobs não dependem de uma sessão humana.
+endlegend
+@enduml

@@ -1,0 +1,69 @@
+@startuml
+title DS03 — Publicar e consultar vantagens (UC05 e UC04)
+hide footbox
+autonumber
+actor Empresa
+actor Aluno
+boundary "Interface React" as ui
+control "Spring Security" as security
+control MeritoController as controller
+control CatalogoService as service
+control UsuarioAtual as atual
+participant "EmpresaRepository / VantagemRepository" as repo
+database PostgreSQL as db
+Empresa -> ui : Informar descrição, custo e foto
+ui -> security : POST /api/vantagens\nmultipart + cookie + CSRF
+security -> controller : Encaminhar se sessão EMPRESA e CSRF válidos
+controller -> service : cadastrar(login, descricao, custo, foto)
+activate service
+group Transação de publicação
+  service -> atual : exigir(login, "EMPRESA")
+  atual --> service : Usuário ativo e autorizado / erro
+  service -> service : Validar descrição e custo positivo\nDecodificar PNG/JPEG: até 2 MiB e 8 MP
+  alt Dados ou foto inválidos
+    service --> controller : 400 / rollback
+  else Dados válidos
+    service -> repo : findById(usuario.id) / saveAndFlush(Vantagem)
+    repo -> db : Consultar empresa e INSERT vantagem + foto binária
+    db --> repo : Registro persistido
+    repo --> service : Vantagem
+    service --> controller : VantagemSaida após commit
+  end
+end
+deactivate service
+controller --> ui : 201 + Location ou erro
+ui --> Empresa : Resultado da publicação
+Aluno -> ui : Abrir catálogo
+ui -> security : GET /api/vantagens (cookie)
+security -> controller : Encaminhar se perfil ALUNO ou EMPRESA
+controller -> service : listar(login)
+service -> atual : exigir(login, "ALUNO", "EMPRESA")
+atual --> service : Usuário ativo
+alt Perfil ALUNO
+  service -> repo : findByEmpresaUsuarioAtivoTrueOrderByDescricao()
+else Perfil EMPRESA
+  service -> repo : findByEmpresaIdOrderByDescricao(usuario.id)
+end
+repo -> db : SELECT vantagens
+db --> repo : Lista (possivelmente vazia)
+repo --> service : Vantagens
+service --> controller : List<VantagemSaida>
+controller --> ui : 200 / descrição, custo, empresa e fotoUrl
+loop Cada foto solicitada
+  ui -> controller : GET /api/vantagens/{id}/foto (sessão autorizada)
+  controller -> service : foto(login, id)
+  service -> atual : Exigir perfil ALUNO ou EMPRESA ativo
+  service -> repo : findById(id)
+  repo -> db : SELECT vantagem e foto
+  db --> repo : Vantagem
+  repo --> service : Vantagem
+  service -> service : Validar empresa ativa e titularidade se EMPRESA
+  service --> controller : FotoSaida / erro
+  controller --> ui : 200 / bytes e Content-Type / 403 / 404
+end
+ui --> Aluno : Catálogo ou indicação de lista vazia
+note over security
+Sessão ausente: 401; perfil ou CSRF inválido: 403.
+O catálogo não movimenta moedas.
+end note
+@enduml

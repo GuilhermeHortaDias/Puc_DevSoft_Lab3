@@ -1,0 +1,51 @@
+@startuml
+title DS08 — Entregar emails persistidos (UC10 e UC12)
+hide footbox
+autonumber
+control "Spring Scheduler" as scheduler
+control EmailJob as job
+control EmailService as service
+participant NotificacaoRepository as repo
+entity NotificacaoEmail as notificacao
+database PostgreSQL as db
+participant "JavaMailSender" as mail
+participant "Servidor SMTP\nMailpit local / provedor externo" as smtp
+note over repo, db
+DS04/DS06 já confirmaram movimento e notificações no banco.
+Worker lê somente registros confirmados, sem repetir a operação financeira.
+end note
+scheduler -> job : executar() / atraso inicial e intervalo de 10 s
+job -> service : processarPendentes()
+activate service
+group Transação do lote de notificações
+  service -> repo : pendentes(Instant.now())
+  repo -> db : SELECT estado <> ENVIADA e tentativa vencida\nLIMIT 10 FOR UPDATE SKIP LOCKED
+  db --> repo : Notificações bloqueadas
+  repo --> service : Lista
+  loop Cada notificação selecionada
+    service -> notificacao : Obter destinatário, assunto e conteúdo persistidos
+    notificacao --> service : Dados da mensagem
+    service -> mail : send(SimpleMailMessage)
+    mail -> smtp : Enviar email
+    alt Envio aceito
+      smtp --> mail : Aceite SMTP
+      mail --> service : Sucesso
+      service -> notificacao : enviada() / incrementar tentativas e limpar erro
+    else MailException
+      smtp --> mail : Falha de envio
+      mail --> service : MailException
+      service -> notificacao : falhou() / incrementar tentativas\nagendar próxima tentativa e estado FALHA
+    end
+  end
+  service -> db : Commit JPA / atualizar estados das entidades gerenciadas
+  db --> service : Commit
+end
+service --> job : Lote concluído
+deactivate service
+note over service, smtp
+Aluno recebe reconhecimento; aluno e empresa recebem o mesmo cupom.
+Mensagens têm resultados individuais, sem gerar novo débito ou código.
+Aceite SMTP não comprova leitura nem entrega física do benefício.
+Se o processo cair após envio e antes do commit, email pode se repetir.
+end note
+@enduml

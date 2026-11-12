@@ -1,0 +1,83 @@
+@startuml
+title DS06 — Resgatar vantagem e gerar cupom (UC08 inclui UC11 e UC12)
+hide footbox
+autonumber
+actor Aluno
+boundary "Interface React" as ui
+control "Spring Security" as security
+control MeritoController as controller
+control MoedasService as service
+control UsuarioAtual as atual
+participant "Repositories JPA\nConta, Movimentacao, Vantagem,\nAluno e Notificacao" as repo
+entity Movimentacao as movimento
+database PostgreSQL as db
+ref over Aluno, ui : DS03 — Consultar e selecionar vantagem (UC04)
+Aluno -> ui : Confirmar resgate
+ui -> security : POST /api/moedas/resgates\nResgateEntrada + requisicaoId + cookie + CSRF
+security -> controller : Encaminhar se ALUNO e CSRF válidos
+controller -> controller : Bean Validation (@Valid)
+controller -> service : resgatar(login, entrada)
+activate service
+group Transação de resgate
+  service -> atual : exigir(login, "ALUNO")
+  atual --> service : Usuário ativo / erro
+  service -> repo : findBySolicitanteIdAndRequisicaoId(...)
+  repo -> db : SELECT movimentacao
+  db --> repo : Operação anterior ou vazio
+  repo --> service : Resultado
+  alt Comando já registrado
+    service -> service : Comparar tipo e vantagem
+    service --> controller : Mesmo DTO e cupom / 409 se comando diferente
+  else Comando novo
+    service -> repo : bloquearTitulares(aluno)
+    repo -> db : SELECT conta FOR UPDATE
+    db --> repo : Conta bloqueada
+    repo --> service : Conta
+    service -> repo : Reconsultar solicitante + requisicaoId após bloqueio
+    repo -> db : SELECT movimentacao
+    db --> repo : Resultado
+    repo --> service : Resultado
+    alt Comando confirmado por outra requisição
+      service --> controller : Mesmo DTO e cupom / 409 se comando diferente
+    else Comando ainda não registrado
+      service -> repo : VantagemRepository.findById(vantagemId)
+      repo -> db : SELECT vantagem e empresa
+      db --> repo : Resultado
+      repo --> service : Vantagem
+      alt Vantagem indisponível ou saldo insuficiente
+        service --> controller : 400 / rollback
+      else Empresa ativa e saldo suficiente
+        service -> service : Debitar custo atual da conta do aluno
+        service -> movimento : resgate(conta, vantagem, requisicaoId)
+        movimento -> movimento : Gerar cupom UUID\nCopiar custo e descrição histórica (UC11)
+        movimento --> service : Movimento de resgate com código
+        service -> repo : save(movimento)
+        service -> repo : Consultar aluno / save(email aluno) / save(email empresa)
+        note right of service
+          As duas notificações contêm
+          o mesmo código e descrição histórica.
+        end note
+        service -> repo : MovimentacaoRepository.flush()
+        repo -> db : UPDATE saldo / INSERT movimento e 2 notificações
+        alt Falha de persistência (inclui unicidade do cupom)
+          db --> repo : Erro
+          repo --> service : Exceção / rollback integral
+          service --> controller : Erro, sem débito ou cupom confirmado
+        else Persistência válida
+          db --> repo : Resultado
+          repo --> service : Resultado
+          service --> controller : ExtratoSaida com código após commit
+        end
+      end
+    end
+  end
+end
+deactivate service
+controller --> ui : 201 / resultado ou erro
+ui --> Aluno : Mostrar cupom para conferência presencial
+ref over repo, db : DS08 — Enviar emails pendentes (UC12), em execução independente após commit
+note over movimento, db
+Cupom é campo da movimentação, não entidade/tabela separada.
+Empresa não recebe moedas. Repetição não gera novo cupom.
+end note
+@enduml

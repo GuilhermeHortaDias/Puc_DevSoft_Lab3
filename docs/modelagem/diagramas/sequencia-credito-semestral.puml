@@ -1,0 +1,57 @@
+@startuml
+title DS07 — Creditar 1.000 moedas por semestre (UC09)
+hide footbox
+autonumber
+control "Spring\ninicialização / agendamento" as spring
+control CreditoSemestralJob as job
+control CreditoSemestralService as service
+participant ProfessorRepository as professores
+participant ContaRepository as contas
+participant MovimentacaoRepository as movimentos
+database PostgreSQL as db
+spring -> job : executar()\nApplicationReadyEvent ou 1º de janeiro/julho
+job -> job : LocalDate.now(America/Sao_Paulo)
+job -> professores : findByUsuarioAtivoTrue()
+professores -> db : SELECT professores ativos
+db --> professores : Professores
+professores --> job : Lista
+loop Cada professor elegível
+  job -> service : creditar(professorId, data)
+  activate service
+  group Transação individual por professor
+    service -> professores : findById(professorId)
+    professores -> db : SELECT professor
+    db --> professores : Professor
+    professores --> service : Professor
+    alt Usuário inativo
+      service --> job : Retornar sem crédito
+    else Usuário ativo
+      service -> contas : bloquearTitulares(professorId)
+      contas -> db : SELECT conta FOR UPDATE
+      db --> contas : Conta bloqueada
+      contas --> service : Conta
+      service -> service : Calcular ano e semestre da data
+      service -> movimentos : existsByDestinoIdAndTipoAndAnoAndSemestre(...)
+      movimentos -> db : Verificar crédito já registrado
+      db --> movimentos : Existe / não existe
+      movimentos --> service : Resultado
+      alt Crédito já concedido
+        service --> job : Retornar sem duplicar
+      else Sem crédito no período
+        service -> service : Gerar requisicaoId determinístico\nSomar 1.000 ao saldo existente
+        service -> movimentos : saveAndFlush(Movimentacao.credito(...))
+        movimentos -> db : INSERT crédito / UPDATE conta
+        db --> movimentos : Resultado
+        movimentos --> service : Movimento
+        service --> job : Concluir após commit
+      end
+    end
+  end
+  deactivate service
+end
+note over job, db
+Não há endpoint público nem ator administrador.
+Erro no crédito atual causa rollback; reexecução preserva créditos anteriores.
+O pré-cadastro institucional acontece antes do evento de aplicação pronta.
+end note
+@enduml

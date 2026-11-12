@@ -2,7 +2,15 @@
 
 [Contexto e integrantes](README.md)
 
-## Entrega atual — Lab03S02 / Sprint 2
+## Entrega atual — Lab04S01 / primeira entrega do laboratório 4
+
+**[Diagramas de sequência, visão geral de interação e correspondência com o código](docs/modelagem/interacoes.md)**
+
+A seção 4.4 do [enunciado do laboratório 4](LABORATORIO_4_LAB_DESENVOLVIMENTO_DE_SOFTWARE%20%281%29.pdf) exige os diagramas UML e os casos de uso restantes. A entrega contém oito diagramas de sequência (UC01–UC12), um diagrama de visão geral de interação e a rastreabilidade para os fluxos já implementados no backend/React. Fontes PlantUML e exportações SVG/PNG estão em `docs/modelagem/diagramas/`. A compilação e as verificações básicas desta etapa não substituem a campanha completa de testes.
+
+Implantação na nuvem e diagrama de implantação ficam para Lab04S02; a análise crítica e as refatorações de outro projeto, para Lab04S03.
+
+## Entrega histórica — Lab03S02 / Sprint 2
 
 **[Entrega, escopo e instruções para executar](docs/entrega-sprint-2/README.md)** · [Modelo ER](docs/entrega-sprint-2/MODELO_ER.md) · [Roteiro de apresentação](docs/entrega-sprint-2/ROTEIRO_APRESENTACAO.md)
 
